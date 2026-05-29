@@ -9,7 +9,7 @@ public class BlackjackStartWindow {
 	
 		private Clip backgroundMusic; 
 		
-		public BlackJackStartWindow() {
+		public BlackjackStartWindow() {
 			
 			//start window
 			JFrame frame = new JFrame("BlackJack+"); 

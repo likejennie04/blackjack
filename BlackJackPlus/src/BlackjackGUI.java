@@ -6,7 +6,7 @@ import java.awt.*;
 
 public class BlackjackGUI {
 	public static void main(String[] args) {
-		new BlackJackStartWindow(); 
+		new BlackjackStartWindow(); 
 	}
 	
 }
