@@ -32,39 +32,52 @@ public class BlackjackStartWindow {
 			title.setAlignmentX(Component.CENTER_ALIGNMENT);
 			title.setForeground(Color.PINK); 
 			
-			JButton startButton = new JButton("Start Game"); 
+			
+			//buttons
+			JButton onlineButton = new JButton("Online"); 
+			JButton offlineButton = new JButton("Offline");
 			JButton rulesButton = new JButton("Rules");
 			JButton exitButton = new JButton("Exit"); 
 			JButton settingButton = new JButton("Settings"); 
 			
-			startButton.setAlignmentX(Component.CENTER_ALIGNMENT); 
+			onlineButton.setAlignmentX(Component.CENTER_ALIGNMENT); 
+			offlineButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 			rulesButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 			exitButton.setAlignmentX(Component.CENTER_ALIGNMENT); 
 			settingButton.setAlignmentX(Component.CENTER_ALIGNMENT); 
 			
-			startButton.setForeground(Color.PINK); 
+			onlineButton.setForeground(Color.PINK); 
+			offlineButton.setForeground(Color.PINK);
 			rulesButton.setForeground(Color.PINK);
 			exitButton.setForeground(Color.PINK);
 			settingButton.setForeground(Color.PINK); 
 			
 			Dimension buttonSize = new Dimension(200, 50); 
 			
-			startButton.setMaximumSize(buttonSize);
+			onlineButton.setMaximumSize(buttonSize);
+			offlineButton.setMaximumSize(buttonSize); 
 			rulesButton.setMaximumSize(buttonSize); 
 			exitButton.setMaximumSize(buttonSize);
 			settingButton.setMaximumSize(buttonSize);
 			
 			//action
-			startButton.addActionListener(e -> {
-				System.out.println("BlackJack Start Button clicked"); 
-				new PlayerWindow(); 
+			offlineButton.addActionListener(e -> {
+				System.out.println("Offline Mode Chosen"); 
+				new OfflineModeWindow(); 
+				frame.dispose(); 
+			});
+			
+			onlineButton.addActionListener(e -> {
+				System.out.println("Online Mode Chosen");
+				new OnlineModeWindow(); 
 				frame.dispose(); 
 			});
 			
 			rulesButton.addActionListener(e -> {
                  System.out.println("BlackJack+ Rules"); 
                  new RulesWindow(); 
-});
+                 frame.dispose(); 
+			});
 			
 			exitButton.addActionListener( e ->
 				System.exit(0));
@@ -78,7 +91,9 @@ public class BlackjackStartWindow {
 			panel.add(Box.createVerticalGlue());
 			panel.add(title); 
 			panel.add(Box.createRigidArea(new Dimension(0,40)));
-			panel.add(startButton); 
+			panel.add(offlineButton); 
+			panel.add(Box.createRigidArea(new Dimension(0,20)));
+			panel.add(onlineButton); 
 			panel.add(Box.createRigidArea(new Dimension(0,20))); 
 			panel.add(rulesButton); 
 			panel.add(Box.createRigidArea(new Dimension(0, 20))); 

@@ -3,8 +3,8 @@ import javax.swing.*;
 
 import java.awt.*; 
 
-public class PlayerWindow {
-	public PlayerWindow() {
+public class OfflineModeWindow {
+	public OfflineModeWindow() {
 		JFrame frame = new JFrame("BLACKJACK+"); 
 		frame.setSize(800,600); 	
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
@@ -16,7 +16,7 @@ public class PlayerWindow {
 		JButton returnButton = new JButton("Return"); 
 		
 		//label
-		JLabel title = new JLabel("Choose Mode");
+		JLabel title = new JLabel("OFFLINE Mode");
 		title.setFont(new Font("Times New Roman", Font.BOLD, 50));
 		title.setAlignmentX(Component.CENTER_ALIGNMENT);
 		title.setForeground(Color.PINK);
@@ -52,6 +52,8 @@ public class PlayerWindow {
 		
 		returnButton.addActionListener( e-> {
 			System.out.println("Return to main menu"); 
+			new BlackjackStartWindow(); 
+			frame.dispose(); 
 
 		});
 		
