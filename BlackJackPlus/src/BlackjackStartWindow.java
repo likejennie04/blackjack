@@ -60,8 +60,10 @@ public class BlackjackStartWindow {
 				frame.dispose(); 
 			});
 			
-			rulesButton.addActionListener(e -> 
-				System.out.println("BlackJack+ Rules")); 
+			rulesButton.addActionListener(e -> {
+                 System.out.println("BlackJack+ Rules"); 
+                 new RulesWindow(); 
+});
 			
 			exitButton.addActionListener( e ->
 				System.exit(0));
