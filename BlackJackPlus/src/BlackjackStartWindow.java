@@ -18,10 +18,10 @@ public class BlackjackStartWindow {
 			frame.setLocationRelativeTo(null); 
 			
 			//background music 
-			startBackgroundMusic("BJ.bg.wav"); 
+			startBackgroundMusic("backgroundmusic.wav"); 
 			
 			//main panel
-			ImageIcon bgImage = new ImageIcon("/Users/lucan/Downloads/blackjackbackground.png"); 
+			ImageIcon bgImage = new ImageIcon(getClass().getResource("/image/blackjackbackground.png")); 
 			
 			JLabel panel = new JLabel(bgImage); 
 			panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS)); 
