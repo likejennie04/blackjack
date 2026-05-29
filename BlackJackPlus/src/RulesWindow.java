@@ -11,5 +11,6 @@ public class RulesWindow {
 		frame.setLocationRelativeTo(null); 
 		
 		frame.setVisible(true);
+		//你是拉屎
 	}
 }
