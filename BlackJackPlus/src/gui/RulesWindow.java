@@ -43,7 +43,11 @@ public class RulesWindow {
 
         // Add a Close button at the bottom
         JButton closeButton = new JButton("I Understand");
-        closeButton.addActionListener(e -> frame.dispose());
+        closeButton.addActionListener(e -> {
+        	new BlackjackStartWindow(); 
+        	frame.dispose(); 
+        });
+        
         panel.add(closeButton, BorderLayout.SOUTH);
 
         frame.add(panel);
