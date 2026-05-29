@@ -39,13 +39,13 @@ public class OnlineModeWindow {
 		returnButton.setMaximumSize(buttonSize);
 		
 		hostGame.addActionListener(e -> {
-			System.out.println("Computer vs Player chosen"); 
+			System.out.println("Hosting server"); 
 			new HostServerWindow(); 
 			frame.dispose(); 
 		});
 		
 		joinGame.addActionListener(e -> {
-			System.out.println("Player vs Player chosen");
+			System.out.println("Joining server");
 			new JoinServerWindow(); 
 			frame.dispose(); 
 		});		
