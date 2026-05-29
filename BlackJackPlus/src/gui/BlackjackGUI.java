@@ -1,3 +1,4 @@
+package gui;
 import javax.swing.*;
 import javax.sound.sampled.AudioInputStream; 
 import javax.sound.sampled.Clip; 

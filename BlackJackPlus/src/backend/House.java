@@ -1,3 +1,4 @@
+package backend;
 public class House extends Hand {
 
     public String getInitialView() {

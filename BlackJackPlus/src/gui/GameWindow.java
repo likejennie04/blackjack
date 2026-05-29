@@ -1,4 +1,12 @@
-import javax.swing.*; 
+package gui;
+import javax.swing.*;
+
+import backend.Computer;
+import backend.Deck;
+import backend.Hand;
+import backend.House;
+import backend.Player;
+
 import java.awt.*; 
 import java.util.ArrayList;
 import java.util.Random;

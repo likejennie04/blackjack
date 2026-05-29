@@ -1,4 +1,10 @@
+package gui;
 import java.util.ArrayList;
+
+import backend.Computer;
+import backend.Deck;
+import backend.House;
+import backend.Player;
 
 public class BlackjackEngine{ 
 	private String gameMode; 
