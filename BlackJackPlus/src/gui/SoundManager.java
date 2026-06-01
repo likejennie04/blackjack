@@ -78,4 +78,16 @@ public class SoundManager {
 			gainControl.setValue(decibels);
 		}
 	}
+	
+	public static boolean isMusicPlaying() {
+		return backgroundMusic != null && backgroundMusic.isRunning();
+	}
+	
+	public static void toggleMusic () {
+		if (backgroundMusic.isRunning()) {
+			backgroundMusic.stop(); 
+		} else {
+			backgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
+		}
+	}
 }

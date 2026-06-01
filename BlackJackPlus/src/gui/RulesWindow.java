@@ -31,7 +31,7 @@ public class RulesWindow {
 
         // Create a JTextArea to display the text
         JTextArea textArea = new JTextArea(rulesText);
-        textArea.setFont(new Font("Arial", Font.PLAIN, 14));
+        textArea.setFont(new Font("Times New Roman", Font.PLAIN, 14));
         textArea.setEditable(false); // Make it read-only
         textArea.setLineWrap(true);   // Wrap lines
         textArea.setWrapStyleWord(true);
@@ -42,7 +42,7 @@ public class RulesWindow {
         panel.add(scrollPane, BorderLayout.CENTER);
 
         // Add a Close button at the bottom
-        JButton closeButton = new JButton("I Understand");
+        JButton closeButton = new JButton("I UNDERSTAND");
         closeButton.addActionListener(e -> {
         	SoundManager.buttonOne(); 
         	new BlackjackStartWindow(); 
