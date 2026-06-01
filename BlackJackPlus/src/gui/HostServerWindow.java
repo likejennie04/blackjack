@@ -35,6 +35,7 @@ public class HostServerWindow {
 		returnButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 		
 		startButton.addActionListener(e -> {
+			SoundManager.buttonOne();
 			System.out.println("Server started...");
 			
 			new Thread(() -> {
@@ -56,6 +57,7 @@ public class HostServerWindow {
 		});
 		
 		returnButton.addActionListener(e -> {
+			SoundManager.buttonOne();
 			frame.dispose();
 			new BlackjackStartWindow(); 
 		});

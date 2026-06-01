@@ -41,6 +41,7 @@ public class JoinServerWindow {
 		
 		//action 
 		joinButton.addActionListener( e -> {
+			SoundManager.buttonOne(); 
 			String targetIp = ipField.getText().trim(); 
 			System.out.println("Attempting to connect to: " + targetIp);
 			
@@ -58,6 +59,7 @@ public class JoinServerWindow {
 		});
 		
 		returnButton.addActionListener( e -> {
+			SoundManager.buttonOne();
 			frame.dispose(); 
 			new BlackjackStartWindow(); 
 		});

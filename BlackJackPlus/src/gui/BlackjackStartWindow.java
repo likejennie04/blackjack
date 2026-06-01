@@ -61,7 +61,7 @@ public class BlackjackStartWindow {
 			//add sounds to buttons
 			JButton[] menuButtons = {onlineButton, offlineButton, rulesButton, settingButton, exitButton}; 
 			for (JButton btn : menuButtons) {
-				btn.addActionListener(e -> SoundManager.playClick()); 
+				btn.addActionListener(e -> SoundManager.buttonOne()); 
 			}
 			
 			//action

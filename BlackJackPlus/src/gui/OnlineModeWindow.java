@@ -39,18 +39,21 @@ public class OnlineModeWindow {
 		returnButton.setMaximumSize(buttonSize);
 		
 		hostGame.addActionListener(e -> {
+			SoundManager.buttonTwo(); 
 			System.out.println("Hosting server"); 
 			new HostServerWindow(); 
 			frame.dispose(); 
 		});
 		
 		joinGame.addActionListener(e -> {
+			SoundManager.buttonTwo(); 
 			System.out.println("Joining server");
 			new JoinServerWindow(); 
 			frame.dispose(); 
 		});		
 		
 		returnButton.addActionListener( e-> {
+			SoundManager.buttonOne(); 
 			System.out.println("Return to main menu"); 
 			new BlackjackStartWindow(); 
 			frame.dispose();

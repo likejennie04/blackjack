@@ -5,11 +5,14 @@ import java.net.URL;
 
 public class SoundManager {
 	private static Clip backgroundMusic; 
-	private static Clip buttonClickSound; 
+	private static Clip buttonOne; 
+	private static Clip buttonTwo; 
 	
 	public static void init () {
 		loadBackgroundMusic("backgroundmusic1.wav"); 
-		loadButtonClickSound("button1.wav"); 
+		buttonOne = loadSoundEffect("button1.wav", 0.0f); 
+		buttonTwo = loadSoundEffect("button2.wav", 0.0f);    
+
 	}
 	
 	private static void loadBackgroundMusic (String fileName) {
@@ -27,24 +30,35 @@ public class SoundManager {
 		}
 	}
 	
-	private static void loadButtonClickSound(String fileName) {
+	private static Clip loadSoundEffect(String fileName, float volume) {
 		try { 
 			URL url = SoundManager.class.getResource("/sound/" + fileName); 
 			if (url != null) {
                 AudioInputStream audioIn = AudioSystem.getAudioInputStream(url);
-                buttonClickSound = AudioSystem.getClip();
-                buttonClickSound.open(audioIn);
-                setClipVolume(buttonClickSound, 0.0f); // Louder button clicks
+                Clip clip = AudioSystem.getClip();
+                clip.open(audioIn);
+                setClipVolume(clip, volume); 
+                return clip;
             }
         } catch (Exception e) {
-            System.err.println("Error loading click sound: " + e.getMessage());
+            System.err.println("Error loading sound effect [" + fileName + "]: " + e.getMessage());
         }
+		return null;
+	}
+
+	public static void buttonOne() {
+		triggerClip(buttonOne);
 	}
 	
-	public static void playClick() {
-		if (buttonClickSound != null) {
-			buttonClickSound.setFramePosition(0); 
-			buttonClickSound.start(); 
+	public static void buttonTwo() {
+		triggerClip(buttonTwo);
+	}
+	
+	
+	private static void triggerClip(Clip clip) {
+		if (clip != null) {
+			clip.setFramePosition(0); 
+			clip.start(); 
 		}
 	}
 	
@@ -54,5 +68,4 @@ public class SoundManager {
 			gainControl.setValue(decibels);
 		}
 	}
-
 }
