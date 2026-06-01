@@ -7,4 +7,6 @@ public class Config {
     
     public static int windowWidth = 800;
     public static int windowHeight = 600;
+    //default run
+    public static int participantCount = 2; 
 }

@@ -1,13 +1,16 @@
 package gui;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*; 
 
 public class SettingWindow {
+    private JSpinner playerSpinner; 
+    
     public SettingWindow() {
        
         final JFrame frame = new JFrame("Game Settings");
-        frame.setSize(400, 500); 
+        frame.setSize(400, 550); // Increased slightly to prevent component crowding
         frame.setLocationRelativeTo(null);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
@@ -15,24 +18,21 @@ public class SettingWindow {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBackground(Config.tableColor);
 
-       
         JLabel titleLabel = new JLabel("SETTING MENU");
         titleLabel.setForeground(Color.WHITE);
         titleLabel.setFont(new Font("Times New Roman", Font.BOLD, 20));
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        
         String initialMusicText = SoundManager.isMusicPlaying() ? "Music ON" : "Music OFF"; 
         
         final JButton musicBtn = new JButton(initialMusicText);
         musicBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
-        musicBtn.setForeground(Color.PINK);
         musicBtn.setMaximumSize(new Dimension(200, 40));
         musicBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                SoundManager.buttonOne(); // Button Click SFX
-                SoundManager.toggleMusic(); // Toggle background loop
+                SoundManager.buttonOne(); 
+                SoundManager.toggleMusic(); 
                 
                 if (SoundManager.isMusicPlaying()) {
                     musicBtn.setText("Music ON");
@@ -42,7 +42,6 @@ public class SettingWindow {
             }
         });
 
-        // --- 3. Color Selection ---
         JLabel colorLabel = new JLabel("Change Table Theme:");
         colorLabel.setForeground(Color.WHITE);
         colorLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -58,7 +57,7 @@ public class SettingWindow {
         colorBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                SoundManager.buttonOne(); // Play click sound when selector changes
+                SoundManager.buttonOne(); 
                 
                 String selected = (String) colorBox.getSelectedItem();
                 if (selected.equals("Deep Blue")) {
@@ -74,7 +73,7 @@ public class SettingWindow {
                 }
             }
         });
-
+        
         JLabel resLabel = new JLabel("Window Resolution:");
         resLabel.setForeground(Color.WHITE);
         resLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -107,9 +106,41 @@ public class SettingWindow {
                 }
             }
         });
+        
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER)); // Centered flow layout matches Box alignment
+        row.setOpaque(false); // Keeps the background color uniform
+        
+        JLabel numLabel = new JLabel("Number of Players (1-4): "); 
+        numLabel.setForeground(Color.WHITE);
+        
+        SpinnerModel model = new SpinnerNumberModel(Config.participantCount, 1, 4, 1); 
+        playerSpinner = new JSpinner(model); 
+        playerSpinner.setPreferredSize(new Dimension(60, 25));
+        
+        row.add(numLabel); 
+        row.add(playerSpinner);
+        row.setMaximumSize(new Dimension(300, 40));
+        row.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        // --- Action Buttons ---
+        JButton saveButton = new JButton("Save Changes"); 
+        saveButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        saveButton.setMaximumSize(new Dimension(200, 40));
+        saveButton.addActionListener(e -> {
+            SoundManager.buttonOne(); 
+            
+            Config.participantCount = (int) playerSpinner.getValue(); 
+            System.out.println("Config updated. Total participants: " + Config.participantCount);
+            
+            if (GameWindow.instance != null) {
+                GameWindow.instance.updateTheme();
+            }
+            frame.dispose();
+        });
 
         JButton closeBtn = new JButton("Back");
         closeBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        closeBtn.setMaximumSize(new Dimension(200, 40));
         closeBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -121,17 +152,24 @@ public class SettingWindow {
 
         panel.add(Box.createVerticalGlue());
         panel.add(titleLabel);
-        panel.add(Box.createRigidArea(new Dimension(0, 20)));
+        panel.add(Box.createRigidArea(new Dimension(0, 25)));
+        
         panel.add(musicBtn);
         panel.add(Box.createRigidArea(new Dimension(0, 20)));
+        
         panel.add(colorLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
         panel.add(colorBox);
         panel.add(Box.createRigidArea(new Dimension(0, 20)));
+        
         panel.add(resLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
         panel.add(resBox);
-        panel.add(Box.createRigidArea(new Dimension(0, 30)));
+        panel.add(Box.createRigidArea(new Dimension(0, 20)));
+        panel.add(row); 
+        panel.add(Box.createRigidArea(new Dimension(0, 25)));
+        panel.add(saveButton);
+        panel.add(Box.createRigidArea(new Dimension(0, 10)));
         panel.add(closeBtn);
         panel.add(Box.createVerticalGlue());
 

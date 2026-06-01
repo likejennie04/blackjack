@@ -42,11 +42,13 @@ public class GameWindow {
         this.aiList = new ArrayList<>();
         
         if(gameMode.equals("PLAYER")) {
-            for (int i= 0; i < participants; i++) playerList.add(new Player()); 
+        	for (int i = 0; i< Config.participantCount; i++) {
+        		playerList.add(new Player());
+        	}
         } else if (this.gameMode.equals("COMPUTER")) {
             playerList.add(new Player()); 
             Random aiRand = new Random(seed); 
-            for (int i =0; i< participants -1; i ++) {
+            for (int i =0; i<  Config.participantCount - 1; i ++) {
                 aiList.add(new Computer(aiRand, cardDeck, i+ 2)); 
             }
         }
@@ -294,27 +296,45 @@ public class GameWindow {
     }
     
     public void restartMatch() {
-    	System.out.println("Reseting table for next round...."); 
+    	System.out.println("Resetting table for next round...."); 
+    	
     	this.cardDeck = new Deck(); 
     	this.cardDeck.shuffle(new Random().nextInt(10000));
     	
-    	dealer.clearHand(); 
-    	for (Player p : playerList) p.clearHand(); 
-    	for (Computer ai : aiList) ai.clearHand(); 
-    	
     	currentPlayerIndex = 0; 
     	
-    	for (int round =0; round<2; round++ ) {
-    		for (Player p : playerList) {
-    			p.addCard(cardDeck.dealCard());
-    		}
-    		for (Computer ai : aiList) {
-    			ai.addCard(cardDeck.dealCard());
-    		}
-    		
-    		dealer.addCard(cardDeck.dealCard()); 
+    	// 1. Wipe out all current lists clean
+    	dealer.clearHand(); 
+    	playerList.clear(); 
+    	aiList.clear(); 
+    	playOrder.clear(); 
+    	
+    	// 2. Re-populate lists dynamically using the updated configurations
+        if (gameMode.equals("PLAYER")) {
+            for (int i = 0; i < Config.participantCount; i++) {
+                playerList.add(new Player()); 
+            }
+        } else if (gameMode.equals("COMPUTER")) {
+            playerList.add(new Player()); 
+            Random aiRand = new Random(); 
+            for (int i = 0; i < Config.participantCount - 1; i++) {
+                aiList.add(new Computer(aiRand, cardDeck, i + 2)); 
+            }
+        }
+    	
+        // 3. Rebuild your operational sequencing track array
+        for (Player p : playerList) playOrder.add(p);
+        for (Computer ai : aiList) playOrder.add(ai);
+        playOrder.add(dealer); 
+        
+    	// 4. Deal fresh cards into the newly scaled hands
+    	for (int round = 0; round < 2; round++ ) {
+            for (Hand h : playOrder) {
+                h.addCard(cardDeck.dealCard());
+            }
     	}
     	
+    	// 5. Turn user interaction controls back on and repaint
     	hitButton.setEnabled(true);
     	standButton.setEnabled(true);
         statusLabel.setText("Your Turn! Use the control panel buttons below.");
