@@ -7,11 +7,15 @@ public class SoundManager {
 	private static Clip backgroundMusic; 
 	private static Clip buttonOne; 
 	private static Clip buttonTwo; 
+	private static Clip hitButton; 
+	private static Clip standButton; 
 	
 	public static void init () {
 		loadBackgroundMusic("backgroundmusic1.wav"); 
 		buttonOne = loadSoundEffect("button1.wav", 0.0f); 
 		buttonTwo = loadSoundEffect("button2.wav", 0.0f);    
+		hitButton= loadSoundEffect("hitbutton.wav", 0.0f); 
+		standButton = loadSoundEffect("standbutton.wav", 0.0f); 
 
 	}
 	
@@ -52,6 +56,12 @@ public class SoundManager {
 	
 	public static void buttonTwo() {
 		triggerClip(buttonTwo);
+	}
+	public static void hitButton() {
+		triggerClip(hitButton); 
+	}
+	public static void standButton() {
+		triggerClip(standButton); 
 	}
 	
 	

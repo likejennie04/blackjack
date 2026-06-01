@@ -19,7 +19,7 @@ public class GameWindow {
     private JButton standButton; 
     
     // --- CONNECTED BACKEND OBJECTS ---
-    // Instead of an abstract engine, your actual backend classes live here!
+
     private String gameMode;
     private Deck cardDeck; 
     private House dealer; 
@@ -31,9 +31,9 @@ public class GameWindow {
     public GameWindow(String mode, int participants, int seed) {
         this.gameMode = mode;
         
-        // 1. Initialize your exact backend logic structures using screen inputs
+      
         this.cardDeck = new Deck();
-        this.cardDeck.shuffle(seed); // Calls your backend shuffle(int seed)
+        this.cardDeck.shuffle(seed); 
         
         this.playerList = new ArrayList<>(); 
         this.dealer = new House();
@@ -48,7 +48,6 @@ public class GameWindow {
         	}
         }
         
-        //computer vs human mode 
         if (this.gameMode.equals("COMPUTER")) {
             //one human player
         	Player human = new Player(); 
@@ -118,8 +117,15 @@ public class GameWindow {
         styleActionButton(hitButton, new Color(180, 40, 40));
         styleActionButton(standButton, new Color(40, 100, 180));
         
-        hitButton.addActionListener(e -> handelHitAction());
-        standButton.addActionListener(e -> handleStandAction());
+        hitButton.addActionListener(e -> {
+        	SoundManager.hitButton(); 
+        	handelHitAction();
+        });
+        
+        standButton.addActionListener(e ->  {
+        	SoundManager.standButton();
+        	handleStandAction();
+        });
         
         controlPanel.add(hitButton);
         controlPanel.add(standButton);
@@ -164,12 +170,7 @@ public class GameWindow {
         	);
         }
         
-        // Pull human data directly out of backend player class
-        /*tablePanel.add(createPlayerRowPanel("Player 1 (You)", String.valueOf(humanUser.getScore()), humanUser.getHandStrings()));
-        tablePanel.add(Box.createRigidArea(new Dimension(0, 10)));
-        *
-        */
-    
+        
         if (gameMode.equals("COMPUTER")) {
             for (int i = 0; i < aiList.size(); i++) {
                 Computer ai = aiList.get(i);
@@ -220,7 +221,7 @@ public class GameWindow {
         if (gameMode.equals("COMPUTER")) {
             Thread[] aiThreads = new Thread[aiList.size()];
             for (int i = 0; i < aiList.size(); i++) {
-                // Starts your backend multithreaded AI logic run method
+     
                 aiThreads[i] = new Thread(aiList.get(i)); 
                 aiThreads[i].start();
             }
@@ -231,7 +232,7 @@ public class GameWindow {
                     for (Thread t : aiThreads) {
                         t.join();
                     }
-                    // Executes backend dealer rule algorithms
+                   
                     hitButton.setEnabled(false);
                     standButton.setEnabled(false); 
                     

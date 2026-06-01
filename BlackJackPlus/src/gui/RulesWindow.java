@@ -44,7 +44,7 @@ public class RulesWindow {
         // Add a Close button at the bottom
         JButton closeButton = new JButton("I Understand");
         closeButton.addActionListener(e -> {
-        	SoundManager.playClick(); 
+        	SoundManager.buttonOne(); 
         	new BlackjackStartWindow(); 
         	frame.dispose(); 
         });
