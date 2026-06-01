@@ -41,7 +41,6 @@ public class BlackjackStartWindow {
         
         for (JButton btn : buttons) {
             btn.setAlignmentX(Component.CENTER_ALIGNMENT); 
-            btn.setForeground(Color.PINK); 
             btn.setMaximumSize(buttonSize);
             btn.setFont(new Font("Times New Roman", Font.BOLD, 14));
         }
