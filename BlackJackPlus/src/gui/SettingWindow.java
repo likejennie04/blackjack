@@ -15,17 +15,14 @@ public class SettingWindow {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBackground(Config.tableColor);
 
-        // --- 1. Title ---
+       
         JLabel titleLabel = new JLabel("SETTING MENU");
         titleLabel.setForeground(Color.WHITE);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        titleLabel.setFont(new Font("Times New Roman", Font.BOLD, 20));
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // --- 2. Music Button ---
-        String initialMusicText = "Music OFF"; 
-        if (BlackjackStartWindow.backgroundMusic != null && BlackjackStartWindow.backgroundMusic.isRunning()) {
-            initialMusicText = "Music ON";
-        }
+        
+        String initialMusicText = SoundManager.isMusicPlaying() ? "Music ON" : "Music OFF"; 
         
         final JButton musicBtn = new JButton(initialMusicText);
         musicBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -34,8 +31,10 @@ public class SettingWindow {
         musicBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                BlackjackStartWindow.toggleMusic();
-                if (BlackjackStartWindow.backgroundMusic.isRunning()) {
+                SoundManager.buttonOne(); // Button Click SFX
+                SoundManager.toggleMusic(); // Toggle background loop
+                
+                if (SoundManager.isMusicPlaying()) {
                     musicBtn.setText("Music ON");
                 } else {
                     musicBtn.setText("Music OFF");
@@ -53,13 +52,14 @@ public class SettingWindow {
         colorBox.setMaximumSize(new Dimension(200, 40));
         colorBox.setAlignmentX(Component.CENTER_ALIGNMENT);
         
-        // Sync color selector with current Config
         if (Config.tableColor.equals(new Color(15, 30, 80))) colorBox.setSelectedIndex(1);
         else if (Config.tableColor.equals(new Color(80, 10, 10))) colorBox.setSelectedIndex(2);
 
         colorBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                SoundManager.buttonOne(); // Play click sound when selector changes
+                
                 String selected = (String) colorBox.getSelectedItem();
                 if (selected.equals("Deep Blue")) {
                     Config.tableColor = new Color(15, 30, 80);
@@ -75,7 +75,6 @@ public class SettingWindow {
             }
         });
 
-        // --- 4. Resolution Selection ---
         JLabel resLabel = new JLabel("Window Resolution:");
         resLabel.setForeground(Color.WHITE);
         resLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -85,45 +84,41 @@ public class SettingWindow {
         resBox.setMaximumSize(new Dimension(200, 40));
         resBox.setAlignmentX(Component.CENTER_ALIGNMENT);
         
-        // Sync resolution selector with current Config
         if (Config.windowWidth == 1024) resBox.setSelectedIndex(1);
         else if (Config.windowWidth == 1280) resBox.setSelectedIndex(2);
 
         resBox.addActionListener(new ActionListener() {
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        String selected = (String) resBox.getSelectedItem();
-        
-       
-        if (selected.contains("1024")) {
-            Config.windowWidth = 1024; Config.windowHeight = 768;
-        } else if (selected.contains("1280")) {
-            Config.windowWidth = 1280; Config.windowHeight = 720;
-        } else {
-            Config.windowWidth = 800; Config.windowHeight = 600;
-        }
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                SoundManager.buttonOne(); 
+                String selected = (String) resBox.getSelectedItem();
+                if (selected.contains("1024")) {
+                    Config.windowWidth = 1024; Config.windowHeight = 768;
+                } else if (selected.contains("1280")) {
+                    Config.windowWidth = 1280; Config.windowHeight = 720;
+                } else {
+                    Config.windowWidth = 800; Config.windowHeight = 600;
+                }
 
-       
-        if (GameWindow.instance != null) {
-            GameWindow.instance.applyResolution(Config.windowWidth, Config.windowHeight);
-        } else {
-           
-            System.out.println("Resolution preset to " + Config.windowWidth + "x" + Config.windowHeight);
-        }
-    }
-});
+                if (GameWindow.instance != null) {
+                    GameWindow.instance.applyResolution(Config.windowWidth, Config.windowHeight);
+                } else {
+                    System.out.println("Resolution preset to " + Config.windowWidth + "x" + Config.windowHeight);
+                }
+            }
+        });
 
-        // --- 5. Close Button ---
         JButton closeBtn = new JButton("Back");
         closeBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         closeBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                SoundManager.buttonOne(); 
+                new BlackjackStartWindow(); 
                 frame.dispose();
             }
         });
 
-        
         panel.add(Box.createVerticalGlue());
         panel.add(titleLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 20)));

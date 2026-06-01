@@ -9,31 +9,31 @@ import javax.sound.sampled.Clip;
 import java.net.URL; 
 
 public class BlackjackStartWindow {
-    
+
     public static Clip backgroundMusic; 
     
     public BlackjackStartWindow() {
-        /* 1. 初始化主窗口 */
+     
         JFrame frame = new JFrame("BlackJack+"); 
         frame.setSize(800, 600); 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLocationRelativeTo(null); 
         
-        /* 2. 启动背景音乐 */
+      
         startBackgroundMusic("backgroundmusic.wav"); 
         
-        /* 3. 设置背景面板 */
+        
         ImageIcon bgImage = new ImageIcon(getClass().getResource("/image/blackjackbackground.png")); 
         JLabel panel = new JLabel(bgImage); 
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS)); 
         
-        /* 4. 游戏标题 */
+      
         JLabel title = new JLabel("BLACKJACK+");
         title.setFont(new Font("Times New Roman", Font.BOLD, 50));
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
         title.setForeground(Color.PINK); 
         
-        /* 5. 创建按钮 */
+        /* 5. 创建并美化按钮 */
         JButton offlineButton = new JButton("Offline");
         JButton onlineButton = new JButton("Online");
         JButton rulesButton = new JButton("Rules");
@@ -48,13 +48,18 @@ public class BlackjackStartWindow {
             btn.setForeground(Color.PINK); 
             btn.setMaximumSize(buttonSize);
             btn.setFont(new Font("Arial", Font.BOLD, 14));
-            // 整合音效逻辑 (如果你的项目中包含 SoundManager)
+            
+            
             btn.addActionListener(e -> {
-                try { SoundManager.buttonOne(); } catch (Exception ex) {}
+                try {
+                    backend.SoundManager.buttonOne(); // 假设在 backend 包下
+                } catch (Exception ex) {
+                    System.err.println("Sound error: " + ex.getMessage());
+                }
             });
         }
         
-        /* 6. 按钮事件监听 */
+       
         offlineButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -97,7 +102,7 @@ public class BlackjackStartWindow {
             }
         });
         
-        /* 7. 布局排版 */
+        
         panel.add(Box.createVerticalGlue());
         panel.add(title); 
         panel.add(Box.createRigidArea(new Dimension(0, 40)));

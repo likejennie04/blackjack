@@ -36,7 +36,6 @@ public class GameWindow {
        instance = this;
         this.gameMode = mode;
         
-        /* 1. Initialize backend logic structures */
         this.cardDeck = new Deck();
         this.cardDeck.shuffle(seed);
         this.playerList = new ArrayList<>(); 
@@ -61,8 +60,7 @@ public class GameWindow {
             for (Hand h: playOrder) h.addCard(cardDeck.dealCard());
         }
         
-        /* 2. Build UI Layout Components */
-        frame = new JFrame("BLACKJACK+"); // FIXED: Added missing initialization
+        frame = new JFrame("BLACKJACK+"); 
         this.applyResolution(Config.windowWidth, Config.windowHeight);
         frame.setSize(Config.windowWidth, Config.windowHeight); 
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -74,7 +72,7 @@ public class GameWindow {
         JPanel headerPanel = new JPanel(new BorderLayout()); 
         headerPanel.setOpaque(false);
         statusLabel = new JLabel("Your Turn! Use the control panel buttons below.", JLabel.CENTER); 
-        statusLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        statusLabel.setFont(new Font("Times New Roman", Font.BOLD, 16));
         statusLabel.setForeground(new Color(220, 220, 100)); 
         headerPanel.add(statusLabel, BorderLayout.CENTER); 
         mainPanel.add(headerPanel, BorderLayout.NORTH);
@@ -98,10 +96,10 @@ public class GameWindow {
         styleActionButton(standButton, new Color(40, 100, 180));
         styleActionButton(settingButton, new Color(100, 100, 100));
         
-        /* Action Listeners using Anonymous Inner Classes (Student Style) */
         settingButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+            	SoundManager.buttonOne(); 
                 System.out.println("Debug: Opening settings from game window");
                 new SettingWindow(); 
             }
@@ -110,6 +108,7 @@ public class GameWindow {
         hitButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+            	SoundManager.hitButton();
                 handelHitAction();
             }
         });
@@ -117,6 +116,7 @@ public class GameWindow {
         standButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+            	SoundManager.standButton(); 
                 handleStandAction();
             }
         });
@@ -131,40 +131,24 @@ public class GameWindow {
         frame.setVisible(true);
     }
 
-    /* --- UI Refresh & Scaling Methods --- */
-
-    /**
-     * Resizes the frame and refreshes the content layout.
-     * Called by SettingWindow.
-     */
+   
     public void applyResolution(int w, int h) {
     if (frame != null) {
        
         frame.setSize(w, h);
         frame.getContentPane().setPreferredSize(new Dimension(w, h));
-        
-        
+
         frame.pack(); 
-        
-        
         frame.setLocationRelativeTo(null); 
         
         frame.getContentPane().revalidate();
         frame.repaint();
-        
-        
-        JOptionPane.showMessageDialog(frame, "Resolution matched to " + w + "x" + h);
-        System.out.println("Debug: Applied " + w + "x" + h);
     }
 }
 
     public JFrame getFrame() {
         return this.frame;
     }
-
-    /**
-     * Updates the background color of panels in real-time.
-     */
     public void updateTheme() {
         if (mainPanel != null) mainPanel.setBackground(Config.tableColor);
         if (tablePanel != null) tablePanel.setBackground(Config.tableColor);
@@ -214,11 +198,11 @@ public class GameWindow {
         identityLabelPanel.setPreferredSize(new Dimension(150, 0)); 
         
         JLabel nameTxT = new JLabel(name); 
-        nameTxT.setFont(new Font("Arial", Font.BOLD, 15)); 
+        nameTxT.setFont(new Font("Times New Roman", Font.BOLD, 15)); 
         nameTxT.setForeground(Color.WHITE);
         
         JLabel scoreTxT = new JLabel("Score: " + currentScore); 
-        scoreTxT.setFont(new Font("Arial", Font.PLAIN, 13));
+        scoreTxT.setFont(new Font("Times New Roman", Font.PLAIN, 13));
         scoreTxT.setForeground(new Color(220, 220, 220));
         
         identityLabelPanel.add(nameTxT); 
@@ -234,7 +218,7 @@ public class GameWindow {
             cardVisual.setBackground(Color.WHITE); 
             cardVisual.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1)); 
             JLabel cardLabel = new JLabel(card, JLabel.CENTER); 
-            cardLabel.setFont(new Font("Arial", Font.BOLD, 14));
+            cardLabel.setFont(new Font("Times New Roman", Font.BOLD, 14));
             if (card.contains("h") || card.contains("d") || card.contains("♥") || card.contains("♦")) {
                 cardLabel.setForeground(Color.RED);
             } else {
@@ -300,77 +284,15 @@ public class GameWindow {
     }
 
     private void evaluateFinalWinners() {
-    int dealerScore = dealer.getScore();
-    StringBuilder results = new StringBuilder(); 
-    StringBuilder dialogMessage = new StringBuilder();
-    
-    dialogMessage.append("🏆 === GAME OVER SUMMARY === 🏆\n\n");
-    dialogMessage.append(String.format("🏠 Dealer (House) Score: %d %s\n", 
-        dealerScore, (dealerScore > 21 ? "[BUSTED! 💥]" : "")));
-    dialogMessage.append("--------------------------------------------------\n");
-
-    for (int i = 0; i < playerList.size(); i++) {
-        Player p = playerList.get(i); 
-        int score = p.getScore(); 
-        String outcome = "";
-
-        results.append("P").append(i+1).append(": "); 
-        if (score > 21) {
-            results.append("Bust");
-            outcome = "❌ BUSTED (Lose)";
-        } else if (p.getHandStrings().length == 5 && score <= 21) {
-            results.append("5-Card Win");
-            outcome = "👑 WIN (5-Card Charlie!)";
-        } else if (dealerScore > 21) {
-            results.append("Win");
-            outcome = "🎉 WIN (Dealer Busted)";
-        } else if (score > dealerScore) {
-            results.append("Win");
-            outcome = "🎉 WIN (Higher Score)";
-        } else if (score < dealerScore) {
-            results.append("Lose");
-            outcome = "😭 LOSE";
-        } else {
-            results.append("Draw");
-            outcome = "🤝 DRAW (Push)";
-        } 
-        
-        if (i < playerList.size() - 1) results.append(" | ");
-        dialogMessage.append(String.format("👤 Player %d:  Score: %d  ->  %s\n", (i + 1), score, outcome));
-    }
-
-    if (gameMode.equals("COMPUTER")) {
-        dialogMessage.append("--------------------------------------------------\n");
-        for (int i = 0; i < aiList.size(); i++) {
-            Computer ai = aiList.get(i);
-            int score = ai.getScore();
-            String outcome = "";
-
-            if (score > 21) outcome = "❌ BUSTED";
-            else if (ai.getHandStrings().length == 5 && score <= 21) outcome = "👑 WIN (5-Card Charlie!)";
-            else if (dealerScore > 21 || score > dealerScore) outcome = "🎉 WIN";
-            else if (score < dealerScore) outcome = "😭 LOSE";
-            else outcome = "🤝 DRAW";
-
-            dialogMessage.append(String.format("🤖 AI Bot %d:  Score: %d  ->  %s\n", (i + 2), score, outcome));
-        }
-    }
-
-    statusLabel.setText(results.toString());
-
-    JOptionPane.showMessageDialog(
-        frame, 
-        dialogMessage.toString(), 
-        "Game Results", 
-        JOptionPane.INFORMATION_MESSAGE
-    );
-}
+    	String bannerResultsText = FinalBoardPrint.showSummary(frame, dealer, playerList, aiList, gameMode); 
+    	statusLabel.setText(bannerResultsText); 
+    } 
 
     private void styleActionButton(JButton button, Color bg) {
         button.setPreferredSize(new Dimension(120, 40)); 
         button.setBackground(bg); 
         button.setForeground(Color.WHITE); 
-        button.setFont(new Font("Arial", Font.BOLD, 14)); 
+        button.setFont(new Font("Times New Roman", Font.BOLD, 14)); 
         button.setFocusPainted(false); 
         button.setBorderPainted(false); 
         button.setOpaque(true); 
