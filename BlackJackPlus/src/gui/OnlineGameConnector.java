@@ -24,7 +24,7 @@ public class OnlineGameConnector {
 	}
 	
 	private void initializeGUI() {
-		frame = new JFrame("Blackjack Multiplayer Arena"); 
+		frame = new JFrame("Blackjack+ Arena"); 
 		frame.setSize(800, 600);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setLocationRelativeTo(null);

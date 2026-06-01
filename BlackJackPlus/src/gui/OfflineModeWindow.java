@@ -39,18 +39,21 @@ public class OfflineModeWindow {
 		returnButton.setMaximumSize(buttonSize);
 		
 		CvP.addActionListener(e -> {
+			SoundManager.buttonTwo(); 
 			System.out.println("Computer vs Player chosen"); 
 			new GameWindow("COMPUTER", 3, 42);
 			frame.dispose(); 
 		});
 		
 		PvP.addActionListener(e -> {
+			SoundManager.buttonTwo(); 
 			System.out.println("Player vs Player chosen");
 			new GameWindow("PLAYER", 3, 42); 
 			frame.dispose(); 
 		});		
 		
 		returnButton.addActionListener( e-> {
+			SoundManager.buttonOne();
 			System.out.println("Return to main menu"); 
 			new BlackjackStartWindow(); 
 			frame.dispose(); 
