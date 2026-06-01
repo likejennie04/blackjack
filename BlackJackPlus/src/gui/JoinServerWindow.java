@@ -3,11 +3,14 @@ package gui;
 import javax.swing.*;
 import backend.BlackjackClient; 
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class JoinServerWindow {
     private JFrame frame;
     private JTextField ipField; 
-    
+    private int currentAvatarIndex = 0;
+
     public JoinServerWindow() {
         frame = new JFrame("Join Server"); 
         frame.setSize(800, 600); 
@@ -22,6 +25,29 @@ public class JoinServerWindow {
         title.setFont(new Font("Times New Roman", Font.BOLD, 24));
         title.setForeground(Color.PINK);
         title.setAlignmentX(Component.CENTER_ALIGNMENT); 
+
+        JLabel avatarLabel = new JLabel();
+        if (!AvatarManager.getAllAvatars().isEmpty()) {
+            avatarLabel.setIcon(AvatarManager.getAllAvatars().get(0));
+        }
+        avatarLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        avatarLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        avatarLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (!AvatarManager.getAllAvatars().isEmpty()) {
+                    currentAvatarIndex = (currentAvatarIndex + 1) % AvatarManager.getAllAvatars().size();
+                    avatarLabel.setIcon(AvatarManager.getAllAvatars().get(currentAvatarIndex));
+                    SoundManager.buttonOne();
+                }
+            }
+        });
+
+        JLabel hintLabel = new JLabel("(Click Photo to Change Avatar)");
+        hintLabel.setForeground(Color.GRAY);
+        hintLabel.setFont(new Font("Arial", Font.ITALIC, 11));
+        hintLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         
         JLabel promptLabel = new JLabel("Enter Host IP Address: "); 
         promptLabel.setForeground(Color.LIGHT_GRAY);
@@ -42,11 +68,10 @@ public class JoinServerWindow {
         joinButton.addActionListener(e -> {
             SoundManager.buttonOne(); 
             String targetIp = ipField.getText().trim(); 
-            System.out.println("Attempting to connect to: " + targetIp);
             
             try {
-                // If connection fails, this will instantly throw an exception and jump to catch
                 BlackjackClient client = new BlackjackClient(targetIp); 
+                client.setAvatarId(currentAvatarIndex);
                 
                 new OnlineGameConnector(client); 
                 frame.dispose(); 
@@ -67,7 +92,11 @@ public class JoinServerWindow {
         
         panel.add(Box.createVerticalGlue());
         panel.add(title); 
-        panel.add(Box.createRigidArea(new Dimension(0, 30)));
+        panel.add(Box.createRigidArea(new Dimension(0, 25)));
+        panel.add(avatarLabel);
+        panel.add(Box.createRigidArea(new Dimension(0, 5)));
+        panel.add(hintLabel);
+        panel.add(Box.createRigidArea(new Dimension(0, 25)));
         panel.add(promptLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 10))); 
         panel.add(ipField); 
