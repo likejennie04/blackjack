@@ -69,7 +69,6 @@ public class BlackjackServer {
                         int score = player.getScore();
                         int count = player.getHandStrings().length;
 
-                        // Even on stand, check if the player reached 5-Card Charlie
                         if (score <= 21 && count >= 5) {
                             broadcast("🏆 [5-Card Charlie] A player stands and wins with 5 cards!");
                         } else {

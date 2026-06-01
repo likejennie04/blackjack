@@ -68,6 +68,7 @@ public class FinalBoardPrint {
                 dialogMessage.append(String.format("🤖 AI Bot %d:  Score: %d  ->  %s\n", (i + 2), score, outcome));
             }
         }
+        SoundManager.playSummaryMusic();
 
         // buttons handling
         Object[] options = {"Restart", "Return"};
@@ -86,12 +87,12 @@ public class FinalBoardPrint {
         if (choice == JOptionPane.YES_OPTION) { 
             SoundManager.buttonOne();
             System.out.println("User chose to continue playing.");
-            
-         
+            SoundManager.switchDefaultMusic(); 
             gameWindow.restartMatch(); 
             
         } else if (choice == JOptionPane.NO_OPTION || choice == JOptionPane.CLOSED_OPTION) { 
             System.out.println("Exiting application.");
+            SoundManager.switchDefaultMusic();
             new BlackjackStartWindow(); 
             parentFrame.dispose(); 
         }

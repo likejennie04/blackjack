@@ -18,8 +18,6 @@ public class Computer extends Hand implements Runnable {
     
     @Override
     public void run() {
-        // AI Decision Loop
-        // The AI will continue to hit as long as its score is under 21
         while (getScore() < 21) {
             // STRATEGY: Stop hitting immediately if 5-Card Charlie is achieved
             if (this.handCards.size() >= 5) {
