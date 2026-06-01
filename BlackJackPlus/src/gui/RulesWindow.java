@@ -6,7 +6,7 @@ public class RulesWindow {
     public RulesWindow() {
         // Create the frame
         JFrame frame = new JFrame("Blackjack Rules"); 
-        frame.setSize(600, 500); 
+        frame.setSize(800, 600); 
         // Note: Use DISPOSE_ON_CLOSE so it doesn't close the whole game
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setLocationRelativeTo(null); 
@@ -44,6 +44,7 @@ public class RulesWindow {
         // Add a Close button at the bottom
         JButton closeButton = new JButton("I Understand");
         closeButton.addActionListener(e -> {
+        	SoundManager.playClick(); 
         	new BlackjackStartWindow(); 
         	frame.dispose(); 
         });

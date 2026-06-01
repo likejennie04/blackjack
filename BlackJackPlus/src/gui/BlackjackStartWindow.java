@@ -3,13 +3,13 @@ import javax.swing.*;
 import java.awt.*; 
 import javax.sound.sampled.AudioInputStream; 
 import javax.sound.sampled.AudioSystem; 
-import javax.sound.sampled.Clip; 
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.FloatControl;
+
 import java.net.URL; 
 
 public class BlackjackStartWindow {
 	
-		private Clip backgroundMusic; 
-		
 		public BlackjackStartWindow() {
 			
 			//start window
@@ -18,8 +18,6 @@ public class BlackjackStartWindow {
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			frame.setLocationRelativeTo(null); 
 			
-			//background music 
-			startBackgroundMusic("backgroundmusic.wav"); 
 			
 			//main panel
 			ImageIcon bgImage = new ImageIcon(getClass().getResource("/image/blackjackbackground.png")); 
@@ -59,6 +57,12 @@ public class BlackjackStartWindow {
 			rulesButton.setMaximumSize(buttonSize); 
 			exitButton.setMaximumSize(buttonSize);
 			settingButton.setMaximumSize(buttonSize);
+			
+			//add sounds to buttons
+			JButton[] menuButtons = {onlineButton, offlineButton, rulesButton, settingButton, exitButton}; 
+			for (JButton btn : menuButtons) {
+				btn.addActionListener(e -> SoundManager.playClick()); 
+			}
 			
 			//action
 			offlineButton.addActionListener(e -> {
@@ -107,27 +111,4 @@ public class BlackjackStartWindow {
 			
 			frame.setVisible(true);
 		}
-		private void startBackgroundMusic(String musicFileName) {
-			try {
-				URL url = getClass().getResource("/sound/" + musicFileName); 
-				
-				if (url == null) {
-					System.err.println("Could not find music file: " + musicFileName); 
-					return; 
-				}
-				
-				AudioInputStream audioIn = AudioSystem.getAudioInputStream(url); 
-				backgroundMusic = AudioSystem.getClip(); 
-				backgroundMusic.open(audioIn); 
-				
-				backgroundMusic.loop(Clip.LOOP_CONTINUOUSLY); 
-			} catch (Exception e) {
-				System.err.println("Erro initializing background music."); 
-				e.printStackTrace(); 
-			}
-		}
-
 }
-
-		
-	
