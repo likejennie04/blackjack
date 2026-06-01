@@ -13,7 +13,6 @@ import java.util.Random;
 
 public class GameWindow {
     
-    
     public static GameWindow instance; 
 
     private JFrame frame;
@@ -33,7 +32,7 @@ public class GameWindow {
     private ArrayList<Hand> playOrder = new ArrayList<>(); 
 
     public GameWindow(String mode, int participants, int seed) {
-       instance = this;
+        instance = this;
         this.gameMode = mode;
         
         this.cardDeck = new Deck();
@@ -63,8 +62,8 @@ public class GameWindow {
         frame = new JFrame("BLACKJACK+"); 
         this.applyResolution(Config.windowWidth, Config.windowHeight);
         frame.setSize(Config.windowWidth, Config.windowHeight); 
-    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    frame.setLocationRelativeTo(null);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLocationRelativeTo(null);
         mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBackground(Config.tableColor);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
@@ -131,28 +130,25 @@ public class GameWindow {
         frame.setVisible(true);
     }
 
-   
     public void applyResolution(int w, int h) {
-    if (frame != null) {
-       
-        frame.setSize(w, h);
-        frame.getContentPane().setPreferredSize(new Dimension(w, h));
-
-        frame.pack(); 
-        frame.setLocationRelativeTo(null); 
-        
-        frame.getContentPane().revalidate();
-        frame.repaint();
+        if (frame != null) {
+            frame.setSize(w, h);
+            frame.getContentPane().setPreferredSize(new Dimension(w, h));
+            frame.pack(); 
+            frame.setLocationRelativeTo(null); 
+            frame.getContentPane().revalidate();
+            frame.repaint();
+        }
     }
-}
 
     public JFrame getFrame() {
         return this.frame;
     }
+    
     public void updateTheme() {
         if (mainPanel != null) mainPanel.setBackground(Config.tableColor);
         if (tablePanel != null) tablePanel.setBackground(Config.tableColor);
-        buildTableRows(); // Re-draw rows to apply new background
+        buildTableRows(); 
         frame.repaint();
     }
 
@@ -231,8 +227,6 @@ public class GameWindow {
         return row; 
     }
 
-    /* --- Game Logic Methods --- */
-    
     private void handelHitAction() {
         Player currentPlayer = playerList.get(currentPlayerIndex);
         currentPlayer.addCard(cardDeck.dealCard());
@@ -284,7 +278,8 @@ public class GameWindow {
     }
 
     private void evaluateFinalWinners() {
-    	String bannerResultsText = FinalBoardPrint.showSummary(frame, dealer, playerList, aiList, gameMode); 
+        // ◄--- FIXED: Added "this" as the final parameter so FinalBoardPrint has the instance reference
+    	String bannerResultsText = FinalBoardPrint.showSummary(frame, dealer, playerList, aiList, gameMode, this); 
     	statusLabel.setText(bannerResultsText); 
     } 
 
@@ -296,5 +291,33 @@ public class GameWindow {
         button.setFocusPainted(false); 
         button.setBorderPainted(false); 
         button.setOpaque(true); 
+    }
+    
+    public void restartMatch() {
+    	System.out.println("Reseting table for next round...."); 
+    	this.cardDeck = new Deck(); 
+    	this.cardDeck.shuffle(new Random().nextInt(10000));
+    	
+    	dealer.clearHand(); 
+    	for (Player p : playerList) p.clearHand(); 
+    	for (Computer ai : aiList) ai.clearHand(); 
+    	
+    	currentPlayerIndex = 0; 
+    	
+    	for (int round =0; round<2; round++ ) {
+    		for (Player p : playerList) {
+    			p.addCard(cardDeck.dealCard());
+    		}
+    		for (Computer ai : aiList) {
+    			ai.addCard(cardDeck.dealCard());
+    		}
+    		
+    		dealer.addCard(cardDeck.dealCard()); 
+    	}
+    	
+    	hitButton.setEnabled(true);
+    	standButton.setEnabled(true);
+        statusLabel.setText("Your Turn! Use the control panel buttons below.");
+    	buildTableRows(); 
     }
 }

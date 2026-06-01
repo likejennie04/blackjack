@@ -44,4 +44,8 @@ public class Hand {
         }
         return strings;
     }
+    
+    public void clearHand() {
+    	this.handCards.clear(); 
+    }
 }

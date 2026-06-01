@@ -6,34 +6,30 @@ import java.awt.event.*;
 import javax.sound.sampled.AudioInputStream; 
 import javax.sound.sampled.AudioSystem; 
 import javax.sound.sampled.Clip;
+import javax.sound.sampled.FloatControl;
+
 import java.net.URL; 
 
-public class BlackjackStartWindow {
-
-    public static Clip backgroundMusic; 
-    
+public class BlackjackStartWindow {    
     public BlackjackStartWindow() {
-     
+        
         JFrame frame = new JFrame("BlackJack+"); 
         frame.setSize(800, 600); 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLocationRelativeTo(null); 
         
-      
-        startBackgroundMusic("backgroundmusic.wav"); 
-        
         
         ImageIcon bgImage = new ImageIcon(getClass().getResource("/image/blackjackbackground.png")); 
+        
+        //label
         JLabel panel = new JLabel(bgImage); 
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS)); 
-        
-      
         JLabel title = new JLabel("BLACKJACK+");
         title.setFont(new Font("Times New Roman", Font.BOLD, 50));
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
         title.setForeground(Color.PINK); 
         
-        /* 5. 创建并美化按钮 */
+        //button
         JButton offlineButton = new JButton("Offline");
         JButton onlineButton = new JButton("Online");
         JButton rulesButton = new JButton("Rules");
@@ -47,19 +43,15 @@ public class BlackjackStartWindow {
             btn.setAlignmentX(Component.CENTER_ALIGNMENT); 
             btn.setForeground(Color.PINK); 
             btn.setMaximumSize(buttonSize);
-            btn.setFont(new Font("Arial", Font.BOLD, 14));
-            
-            
-            btn.addActionListener(e -> {
-                try {
-                    backend.SoundManager.buttonOne(); // 假设在 backend 包下
-                } catch (Exception ex) {
-                    System.err.println("Sound error: " + ex.getMessage());
-                }
-            });
+            btn.setFont(new Font("Times New Roman", Font.BOLD, 14));
         }
+        JButton[] menuButtons = {onlineButton, offlineButton, rulesButton, settingButton, exitButton}; 
+		for (JButton btn : menuButtons) {
+			btn.addActionListener(e -> SoundManager.buttonOne()); 
+		}
+		
         
-       
+		//action
         offlineButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -83,6 +75,7 @@ public class BlackjackStartWindow {
             public void actionPerformed(ActionEvent e) {
                 System.out.println("Debug: Opening Rules Window...");
                 new RulesWindow(); 
+                // Usually we don't dispose frame here so user can go back
             }
         });
         
@@ -102,7 +95,6 @@ public class BlackjackStartWindow {
             }
         });
         
-        
         panel.add(Box.createVerticalGlue());
         panel.add(title); 
         panel.add(Box.createRigidArea(new Dimension(0, 40)));
@@ -120,34 +112,5 @@ public class BlackjackStartWindow {
         frame.add(panel); 
         frame.setVisible(true);
     }
-    
-    public static void toggleMusic() {
-        if (backgroundMusic != null) {
-            if (backgroundMusic.isRunning()) {
-                backgroundMusic.stop(); 
-                System.out.println("Music Paused");
-            } else {
-                backgroundMusic.start(); 
-                backgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
-                System.out.println("Music Started");
-            }
-        }
-    }
-    
-    private void startBackgroundMusic(String musicFileName) {
-        try {
-            URL url = getClass().getResource("/sound/" + musicFileName); 
-            if (url == null) {
-                System.err.println("Error: Could not find music file at /sound/" + musicFileName); 
-                return; 
-            }
-            AudioInputStream audioIn = AudioSystem.getAudioInputStream(url); 
-            backgroundMusic = AudioSystem.getClip(); 
-            backgroundMusic.open(audioIn); 
-            backgroundMusic.loop(Clip.LOOP_CONTINUOUSLY); 
-        } catch (Exception e) {
-            System.err.println("Error initializing background music."); 
-            e.printStackTrace(); 
-        }
-    }
+
 }

@@ -10,7 +10,8 @@ public class FinalBoardPrint {
     public static String showSummary(JFrame parentFrame, House dealer, 
                                      ArrayList<Player> playerList, 
                                      ArrayList<Computer> aiList, 
-                                     String gameMode) {
+                                     String gameMode,
+                                     GameWindow gameWindow) { // ◄--- ADDED PARAMETER HERE
         
         int dealerScore = dealer.getScore();
         StringBuilder resultsBanner = new StringBuilder(); 
@@ -21,7 +22,6 @@ public class FinalBoardPrint {
             dealerScore, (dealerScore > 21 ? "[BUSTED! 💥]" : "")));
         dialogMessage.append("--------------------------------------------------\n");
 
-        // --- Calculate and append user outcomes ---
         for (int i = 0; i < playerList.size(); i++) {
             Player p = playerList.get(i); 
             int score = p.getScore(); 
@@ -52,7 +52,6 @@ public class FinalBoardPrint {
             dialogMessage.append(String.format("👤 Player %d:  Score: %d  ->  %s\n", (i + 1), score, outcome));
         }
 
-        // --- Calculate and append AI outcomes ---
         if (gameMode.equals("COMPUTER")) {
             dialogMessage.append("--------------------------------------------------\n");
             for (int i = 0; i < aiList.size(); i++) {
@@ -69,13 +68,34 @@ public class FinalBoardPrint {
                 dialogMessage.append(String.format("🤖 AI Bot %d:  Score: %d  ->  %s\n", (i + 2), score, outcome));
             }
         }
- 
-        JOptionPane.showMessageDialog(
+
+        // buttons handling
+        Object[] options = {"Restart", "Return"};
+        
+        int choice = JOptionPane.showOptionDialog(
             parentFrame, 
             dialogMessage.toString(), 
             "Game Results", 
-            JOptionPane.INFORMATION_MESSAGE
+            JOptionPane.YES_NO_OPTION, 
+            JOptionPane.INFORMATION_MESSAGE, 
+            null, 
+            options,
+            options[0]
         );
+
+        if (choice == JOptionPane.YES_OPTION) { 
+            SoundManager.buttonOne();
+            System.out.println("User chose to continue playing.");
+            
+         
+            gameWindow.restartMatch(); 
+            
+        } else if (choice == JOptionPane.NO_OPTION || choice == JOptionPane.CLOSED_OPTION) { 
+            System.out.println("Exiting application.");
+            new BlackjackStartWindow(); 
+            parentFrame.dispose(); 
+        }
+
         return resultsBanner.toString();
     }
 }
