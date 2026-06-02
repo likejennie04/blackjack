@@ -10,13 +10,21 @@ public class BlackjackClient {
     private String serverIp;
     private int port;
     private int avatarId = 0; 
-
+    private String playerName = "Anonymous";
     public BlackjackClient(String ip) {
         this.serverIp = ip;
         this.port = 8888;
         connectToServer();
     }
+    public void setPlayerName(String name) {
+    if (name != null && !name.trim().isEmpty()) {
+        this.playerName = name.trim();
+    }
+    }
 
+public String getPlayerName() {
+    return this.playerName;
+}
     private void connectToServer() {
         try {
             this.socket = new Socket(serverIp, port);
@@ -36,7 +44,7 @@ public class BlackjackClient {
         
     }
 
-    // 新增：获取头像 ID
+   
     public int getAvatarId() {
         return this.avatarId;
     }
