@@ -99,39 +99,19 @@ public class OnlineGameConnector {
 	}
 	
 	private void processServerMessage(String message) {
-    System.out.println("[Server Data]: " + message); 
-    
-  
-    if (message.contains("GAME_STARTED")) {
-        statusLabel.setText("Game Started! Good Luck!");
-        hitButton.setEnabled(true);   
-        standButton.setEnabled(true); 
-        playerCardPanel.removeAll(); 
-        dealerCardPanel.removeAll();
-    } 
-    
-    else if (message.contains("Initial Cards") || message.contains("Your current hand") || message.contains("hit:")) {
-       
-        JLabel cardLabel = new JLabel(message.replace("[Arena]: ", ""));
-        cardLabel.setForeground(Color.YELLOW);
-        playerCardPanel.add(cardLabel);
-        playerCardPanel.revalidate(); 
-        playerCardPanel.repaint();
-    }
-    
-    else if(message.contains("Your Turn")) {
-        statusLabel.setText("It's your turn!");
-        hitButton.setEnabled(true);
-        standButton.setEnabled(true);
-    } else if (message.contains("Waiting")) {
-        statusLabel.setText("Waiting for other players...");
-        hitButton.setEnabled(false); 
-        standButton.setEnabled(false); 
-    } 
-   
-    else if (message.contains("Bust") || message.contains("wins") || message.contains("Congratulations")) {
-        statusLabel.setText(message);
-        hitButton.setEnabled(false); 
-        standButton.setEnabled(false); 
-    }
+		System.out.println("[Server Data]: " + message); 
+		
+		if(message.contains("Yout Turn")) {
+			statusLabel.setText("It's your turn!");
+			hitButton.setEnabled(true);
+			standButton.setEnabled(true);
+		} else if (message.contains("Waiting")) {
+			statusLabel.setText(("Waiting for other Player..."));
+			hitButton.setEnabled(false); 
+			standButton.setEnabled(false); 
+		} else if (message.contains("Bust") || message.contains("Wins") || message.contains("Dealer")) {
+			statusLabel.setText(message);
+		}
+	}
+ 
 }
