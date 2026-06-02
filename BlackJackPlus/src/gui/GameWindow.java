@@ -10,6 +10,7 @@ import java.awt.*;
 import java.awt.event.*; 
 import java.util.ArrayList;
 import java.util.Random;
+import javax.swing.Timer; 
 
 public class GameWindow {
     
@@ -30,6 +31,7 @@ public class GameWindow {
     private ArrayList<Player> playerList; 
     private int currentPlayerIndex = 0; 
     private ArrayList<Hand> playOrder = new ArrayList<>(); 
+    private boolean cardsRevealed = false; 
 
     public GameWindow(String mode, int participants, int seed) {
         instance = this;
@@ -72,7 +74,8 @@ public class GameWindow {
         
         JPanel headerPanel = new JPanel(new BorderLayout()); 
         headerPanel.setOpaque(false);
-        statusLabel = new JLabel("Your Turn! Use the control panel buttons below.", JLabel.CENTER); 
+        // Set an initial loading message while cards are faced down
+        statusLabel = new JLabel("Dealing cards face down...", JLabel.CENTER); 
         statusLabel.setFont(new Font("Times New Roman", Font.BOLD, 16));
         statusLabel.setForeground(new Color(220, 220, 100)); 
         headerPanel.add(statusLabel, BorderLayout.CENTER); 
@@ -128,7 +131,10 @@ public class GameWindow {
         mainPanel.add(controlPanel, BorderLayout.SOUTH);
         
         frame.add(mainPanel);
-        buildTableRows(); 
+        
+        // --- FIXED: Start the countdown timer right here ---
+        triggerCardFlipTimer(); 
+        
         frame.setVisible(true);
     }
 
@@ -157,24 +163,51 @@ public class GameWindow {
     private void buildTableRows() {
         tablePanel.removeAll(); 
         String[] dealerCards = dealer.getHandStrings();
-        if (hitButton.isEnabled()) {
-            dealerCards = (dealerCards.length >= 2) ? new String[]{"HIDDEN", dealerCards[1]} : new String[]{"HIDDEN"};
-            tablePanel.add(createPlayerRowPanel("Dealer (House)", "??", dealerCards));
+        
+        if (!cardsRevealed) {
+            String[] hiddenDealer = new String[dealerCards.length];
+            for(int i=0; i<hiddenDealer.length; i++) hiddenDealer[i] = "HIDDEN";
+            tablePanel.add(createPlayerRowPanel("Dealer (House)", "??", hiddenDealer));
         } else {
-            tablePanel.add(createPlayerRowPanel("Dealer (House)", String.valueOf(dealer.getScore()), dealerCards));
+            if (hitButton.isEnabled()) {
+                dealerCards = (dealerCards.length >= 2) ? new String[]{"HIDDEN", dealerCards[1]} : new String[]{"HIDDEN"};
+                tablePanel.add(createPlayerRowPanel("Dealer (House)", "??", dealerCards));
+            } else {
+                tablePanel.add(createPlayerRowPanel("Dealer (House)", String.valueOf(dealer.getScore()), dealerCards));
+            }
         }
+       
         tablePanel.add(Box.createRigidArea(new Dimension(0, 10)));
     
         for (int i = 0; i < playerList.size(); i++) {
             Player p = playerList.get(i); 
-            tablePanel.add(createPlayerRowPanel("Player " + (i+1), String.valueOf(p.getScore()), p.getHandStrings()));
+            String[] pCards = p.getHandStrings();
+            String scoreStr = String.valueOf(p.getScore());
+            
+            if (!cardsRevealed) {
+                scoreStr = "??";
+                pCards = new String[pCards.length];
+                for(int j=0; j<pCards.length; j++) pCards[j] = "HIDDEN";
+            }
+            
+            tablePanel.add(createPlayerRowPanel("Player " + (i+1), scoreStr, pCards));
             tablePanel.add(Box.createRigidArea(new Dimension(0, 10)));
         }
     
         if (gameMode.equals("COMPUTER")) {
             for (int i = 0; i < aiList.size(); i++) {
                 Computer ai = aiList.get(i);
-                tablePanel.add(createPlayerRowPanel("AI Bot " + (i + 2), String.valueOf(ai.getScore()), ai.getHandStrings()));
+                String[] aiCards = ai.getHandStrings();
+                String scoreStr = String.valueOf(ai.getScore());
+                
+                // --- FIXED: Hide AI hands and scores during face-down phase ---
+                if (!cardsRevealed) {
+                    scoreStr = "??";
+                    aiCards = new String[aiCards.length];
+                    for(int j=0; j<aiCards.length; j++) aiCards[j] = "HIDDEN";
+                }
+                
+                tablePanel.add(createPlayerRowPanel("AI Bot " + (i + 2), scoreStr, aiCards));
                 tablePanel.add(Box.createRigidArea(new Dimension(0, 10)));
             }
         }
@@ -213,16 +246,25 @@ public class GameWindow {
         for (String card : cards) {
             JPanel cardVisual = new JPanel(new BorderLayout()); 
             cardVisual.setPreferredSize(new Dimension(50, 65)); 
-            cardVisual.setBackground(Color.WHITE); 
-            cardVisual.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1)); 
-            JLabel cardLabel = new JLabel(card, JLabel.CENTER); 
-            cardLabel.setFont(new Font("Times New Roman", Font.BOLD, 14));
-            if (card.contains("h") || card.contains("d") || card.contains("♥") || card.contains("♦")) {
-                cardLabel.setForeground(Color.RED);
+            
+            if (card.equals("HIDDEN")) {
+                cardVisual.setBackground(new Color(150, 20, 20)); 
+                cardVisual.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1));
+                JLabel cardLabel = new JLabel("░░", JLabel.CENTER);
+                cardLabel.setForeground(Color.LIGHT_GRAY);
+                cardVisual.add(cardLabel, BorderLayout.CENTER);
             } else {
-                cardLabel.setForeground(Color.BLACK); 
+                cardVisual.setBackground(Color.WHITE); 
+                cardVisual.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1)); 
+                JLabel cardLabel = new JLabel(card, JLabel.CENTER); 
+                cardLabel.setFont(new Font("Times New Roman", Font.BOLD, 14));
+                if (card.contains("h") || card.contains("d") || card.contains("♥") || card.contains("♦")) {
+                    cardLabel.setForeground(Color.RED);
+                } else {
+                    cardLabel.setForeground(Color.BLACK); 
+                }
+                cardVisual.add(cardLabel, BorderLayout.CENTER);
             }
-            cardVisual.add(cardLabel, BorderLayout.CENTER);
             handPanel.add(cardVisual); 
         }
         row.add(handPanel, BorderLayout.CENTER); 
@@ -261,7 +303,14 @@ public class GameWindow {
                 @Override
                 protected void done() {
                     buildTableRows();
-                    evaluateFinalWinners();
+                    Timer endRoundTimer = new Timer(3000, new ActionListener() {
+                    	@Override
+                    	public void actionPerformed(ActionEvent e) {
+                    		evaluateFinalWinners(); 
+                    	}
+                    }); 
+                    endRoundTimer.setRepeats(false);
+                    endRoundTimer.start();
                 }
             }.execute();
         } else {
@@ -275,12 +324,20 @@ public class GameWindow {
             standButton.setEnabled(false);
             dealer.runTurn(cardDeck);
             buildTableRows(); 
-            evaluateFinalWinners(); 
+            statusLabel.setText("Round Over!"); 
+            
+            Timer endRoundTimer = new Timer (3000, new ActionListener() {
+            	@Override
+            	public void actionPerformed(ActionEvent e) {
+            		evaluateFinalWinners(); 
+            	}
+            });
+            endRoundTimer.setRepeats(false); 
+            endRoundTimer.start(); 
         }
     }
 
     private void evaluateFinalWinners() {
-        // ◄--- FIXED: Added "this" as the final parameter so FinalBoardPrint has the instance reference
     	String bannerResultsText = FinalBoardPrint.showSummary(frame, dealer, playerList, aiList, gameMode, this); 
     	statusLabel.setText(bannerResultsText); 
     } 
@@ -303,13 +360,11 @@ public class GameWindow {
     	
     	currentPlayerIndex = 0; 
     	
-    	// 1. Wipe out all current lists clean
     	dealer.clearHand(); 
     	playerList.clear(); 
     	aiList.clear(); 
     	playOrder.clear(); 
     	
-    	// 2. Re-populate lists dynamically using the updated configurations
         if (gameMode.equals("PLAYER")) {
             for (int i = 0; i < Config.participantCount; i++) {
                 playerList.add(new Player()); 
@@ -322,22 +377,37 @@ public class GameWindow {
             }
         }
     	
-        // 3. Rebuild your operational sequencing track array
         for (Player p : playerList) playOrder.add(p);
         for (Computer ai : aiList) playOrder.add(ai);
         playOrder.add(dealer); 
         
-    	// 4. Deal fresh cards into the newly scaled hands
     	for (int round = 0; round < 2; round++ ) {
             for (Hand h : playOrder) {
                 h.addCard(cardDeck.dealCard());
             }
     	}
     	
-    	// 5. Turn user interaction controls back on and repaint
-    	hitButton.setEnabled(true);
-    	standButton.setEnabled(true);
-        statusLabel.setText("Your Turn! Use the control panel buttons below.");
+        triggerCardFlipTimer(); 
+    }
+    
+    private void triggerCardFlipTimer() {
+    	cardsRevealed = false; 
+    	hitButton.setEnabled(false);
+    	standButton.setEnabled(false); 
+        statusLabel.setText("Dealing cards face down...");
     	buildTableRows(); 
+    	
+    	Timer timer = new Timer(1500, new ActionListener() { // 1.5 seconds delay
+    		@Override 
+    		public void actionPerformed(ActionEvent e) {
+    			cardsRevealed = true; 
+    			hitButton.setEnabled(true); 
+    			standButton.setEnabled(true);
+                statusLabel.setText("Your Turn! Use the control panel buttons below.");
+                buildTableRows(); // --- FIXED: Added repaint trigger to visually flip the cards up
+    		}
+    	});
+    	timer.setRepeats(false); 
+    	timer.start();
     }
 }

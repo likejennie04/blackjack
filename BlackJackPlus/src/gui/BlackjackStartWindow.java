@@ -74,7 +74,6 @@ public class BlackjackStartWindow {
             public void actionPerformed(ActionEvent e) {
                 System.out.println("Debug: Opening Rules Window...");
                 new RulesWindow(); 
-                // Usually we don't dispose frame here so user can go back
             }
         });
         
