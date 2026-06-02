@@ -132,7 +132,6 @@ public class GameWindow {
         
         frame.add(mainPanel);
         
-        // --- FIXED: Start the countdown timer right here ---
         triggerCardFlipTimer(); 
         
         frame.setVisible(true);
@@ -404,7 +403,7 @@ public class GameWindow {
     			hitButton.setEnabled(true); 
     			standButton.setEnabled(true);
                 statusLabel.setText("Your Turn! Use the control panel buttons below.");
-                buildTableRows(); // --- FIXED: Added repaint trigger to visually flip the cards up
+                buildTableRows(); 
     		}
     	});
     	timer.setRepeats(false); 
