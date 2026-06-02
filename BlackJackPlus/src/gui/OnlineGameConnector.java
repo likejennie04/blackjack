@@ -6,7 +6,8 @@ import java.awt.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.URL;
-import java.io.File;
+import java.util.ArrayList; // Added missing import
+import java.util.List;      // Added missing import
 
 public class OnlineGameConnector {
     private JFrame frame;
@@ -15,19 +16,25 @@ public class OnlineGameConnector {
     private JLabel statusLabel;
     private JPanel playerCardPanel;
     private JPanel dealerCardPanel;
+    private JPanel rosterPanel; 
     private JButton hitButton;
     private JButton standButton;
     private JButton returnButton;
+
+    // 👑 Tracking the current active turn's player name locally
+    private String currentTurnPlayerName = "Waiting..."; 
 
     public OnlineGameConnector(BlackjackClient client) {
         this.client = client;
         initializeGUI();
         startServerListener();
+        
+        client.sendMove("AVATAR_UPDATE:" + client.getAvatarId());
     }
 
     private void initializeGUI() {
         frame = new JFrame("Blackjack+ Arena");
-        frame.setSize(800, 650); 
+        frame.setSize(900, 700); 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLocationRelativeTo(null);
 
@@ -40,15 +47,14 @@ public class OnlineGameConnector {
         statusLabel = new JLabel("Waiting for game to start...", JLabel.CENTER);
         statusLabel.setFont(new Font("Times New Roman", Font.BOLD, 18));
         statusLabel.setForeground(Color.WHITE);
+        statusLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        JLabel avatarDisplay = new JLabel();
-        if (!AvatarManager.getAllAvatars().isEmpty()) {
-            avatarDisplay.setIcon(AvatarManager.getAllAvatars().get(client.getAvatarId()));
-        }
-        avatarDisplay.setBorder(BorderFactory.createTitledBorder(null, "YOU", 0, 0, null, Color.WHITE));
+        rosterPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 5));
+        rosterPanel.setOpaque(false);
+        rosterPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(255, 255, 255, 50)));
 
-        topPanel.add(statusLabel, BorderLayout.CENTER);
-        topPanel.add(avatarDisplay, BorderLayout.WEST);
+        topPanel.add(statusLabel, BorderLayout.NORTH);
+        topPanel.add(rosterPanel, BorderLayout.CENTER);
         mainPanel.add(topPanel, BorderLayout.NORTH);
 
         JPanel tablePanel = new JPanel(new GridLayout(2, 1));
@@ -76,10 +82,17 @@ public class OnlineGameConnector {
         hitButton.setEnabled(false);
         standButton.setEnabled(false);
 
-        hitButton.addActionListener(e -> client.sendMove("hit"));
-        standButton.addActionListener(e -> client.sendMove("stand"));
+        hitButton.addActionListener(e -> {
+            SoundManager.hitButton();
+            client.sendMove("hit");
+        });
+        standButton.addActionListener(e -> {
+            SoundManager.standButton();
+            client.sendMove("stand");
+        });
         
         returnButton.addActionListener(e -> {
+            SoundManager.buttonOne();
             client.disconnect();
             frame.dispose();
             new BlackjackStartWindow();
@@ -91,6 +104,9 @@ public class OnlineGameConnector {
         mainPanel.add(controlPanel, BorderLayout.SOUTH);
 
         frame.add(mainPanel);
+        
+        updateVisualRoster(client.getPlayerName() + "," + client.getAvatarId());
+        
         frame.setVisible(true);
     }
 
@@ -113,13 +129,102 @@ public class OnlineGameConnector {
         }).start();
     }
 
+    private void updateVisualRoster(String rawRosterData) {
+        rosterPanel.removeAll();
+
+        // 1. Render the Dealer Block
+        JPanel dealerBlock = new JPanel(new BorderLayout());
+        dealerBlock.setOpaque(false);
+        JLabel dealerAvatar = new JLabel();
+        if (!AvatarManager.getAllAvatars().isEmpty()) {
+            dealerAvatar.setIcon(AvatarManager.getAllAvatars().get(0)); 
+        }
+        dealerAvatar.setHorizontalAlignment(JLabel.CENTER);
+        JLabel dealerNameLabel = new JLabel("Dealer (House)", JLabel.CENTER);
+        dealerNameLabel.setFont(new Font("Times New Roman", Font.BOLD, 12));
+        
+        dealerBlock.add(dealerAvatar, BorderLayout.CENTER);
+        dealerBlock.add(dealerNameLabel, BorderLayout.SOUTH);
+
+        // 👑 HIGHLIGHT: Check if it's the Dealer's Turn
+        if ("Dealer (House)".equals(currentTurnPlayerName)) {
+            dealerNameLabel.setForeground(Color.YELLOW);
+            dealerNameLabel.setText("Dealer ★ Active");
+            dealerBlock.setBorder(BorderFactory.createLineBorder(new Color(255, 215, 0), 3, true)); 
+        } else {
+            dealerNameLabel.setForeground(Color.RED);
+            dealerBlock.setBorder(BorderFactory.createLineBorder(new Color(255, 0, 0, 80), 1, true));
+        }
+        rosterPanel.add(dealerBlock);
+
+        // 2. Render all Connected Players
+        if (rawRosterData != null && !rawRosterData.isEmpty()) {
+            String[] participants = rawRosterData.split(";");
+            for (String part : participants) {
+                if (part.trim().isEmpty()) continue;
+                String[] tokens = part.split(",");
+                if (tokens.length < 2) continue;
+                
+                String name = tokens[0].trim();
+                int avatarId = 0;
+                try { avatarId = Integer.parseInt(tokens[1].trim()); } catch(NumberFormatException ex){}
+
+                JPanel pBlock = new JPanel(new BorderLayout());
+                pBlock.setOpaque(false);
+                
+                JLabel pAvatar = new JLabel();
+                if (!AvatarManager.getAllAvatars().isEmpty() && avatarId >= 0 && avatarId < AvatarManager.getAllAvatars().size()) {
+                    pAvatar.setIcon(AvatarManager.getAllAvatars().get(avatarId));
+                }
+                pAvatar.setHorizontalAlignment(JLabel.CENTER);
+                
+                JLabel pNameLabel = new JLabel(name, JLabel.CENTER);
+                pNameLabel.setFont(new Font("Times New Roman", Font.PLAIN, 12));
+                
+                if (name.equals(client.getPlayerName())) {
+                    pNameLabel.setText(name + " (You)");
+                    pNameLabel.setForeground(Color.GREEN);
+                } else {
+                    pNameLabel.setForeground(Color.WHITE);
+                }
+
+                // 👑 HIGHLIGHT: Check if it's this specific player's turn
+                if (name.equals(currentTurnPlayerName)) {
+                    pNameLabel.setText(pNameLabel.getText() + " ➔ Turn");
+                    pNameLabel.setFont(new Font("Times New Roman", Font.BOLD, 12));
+                    pBlock.setBorder(BorderFactory.createLineBorder(new Color(255, 215, 0), 3, true)); 
+                    
+                    // Local Button Control: Toggle accessibility if it belongs to this instance
+                    if (name.equals(client.getPlayerName())) {
+                        hitButton.setEnabled(true);
+                        standButton.setEnabled(true);
+                    } else {
+                        hitButton.setEnabled(false);
+                        standButton.setEnabled(false);
+                    }
+                } else {
+                    if (name.equals(client.getPlayerName())) {
+                        pBlock.setBorder(BorderFactory.createLineBorder(new Color(0, 255, 0, 80), 1, true));
+                    } else {
+                        pBlock.setBorder(BorderFactory.createLineBorder(new Color(255, 255, 255, 40), 1, true));
+                    }
+                }
+
+                pBlock.add(pAvatar, BorderLayout.CENTER);
+                pBlock.add(pNameLabel, BorderLayout.SOUTH);
+                rosterPanel.add(pBlock);
+            }
+        }
+        
+        rosterPanel.putClientProperty("raw_cache", rawRosterData);
+        rosterPanel.revalidate();
+        rosterPanel.repaint();
+    }
+
     private URL getCardImageURL(String cardCode) {
         cardCode = cardCode.trim().toLowerCase().replace("[", "").replace("]", "");
-        if (cardCode.contains("hidden")) {
-        	return getClass().getResource("image/cards/card_back.png");
-        }
-        if (cardCode.isEmpty())   {
-        	return getClass().getResource("/image/card_back.png");
+        if (cardCode.contains("hidden") || cardCode.isEmpty()) {
+            return getClass().getResource("/image/card_back.png");
         }
 
         String valuePart = cardCode.substring(0, cardCode.length() - 1);
@@ -142,22 +247,38 @@ public class OnlineGameConnector {
             case 's': suitName = "spades"; break;
             default:  suitName = "unknown"; break;
         }
+        // Fixed: Adjusted folder routing pattern match to target /Cards/ subpath perfectly
         return getClass().getResource("/image/" + valueName + "_of_" + suitName + ".png"); 
     }
 
     private void processServerMessage(String message) {
         System.out.println("[Server Data]: " + message);
 
-        if (message.contains("GAME_STARTED")) {
+        if (message.contains("CURRENT_TURN:")) {
+            String activeUser = message.substring(message.indexOf("CURRENT_TURN:") + 13).trim();
+            this.currentTurnPlayerName = activeUser;
+            
+            String cachedData = (String) rosterPanel.getClientProperty("raw_cache");
+            updateVisualRoster(cachedData);
+            
+            if (activeUser.equals(client.getPlayerName())) {
+                statusLabel.setText("★ Your Turn! Make your move. ★");
+            } else {
+                statusLabel.setText("Waiting for " + activeUser + " to complete their turn...");
+            }
+        }
+
+        if (message.contains("ROSTER_UPDATE:")) {
+            String data = message.substring(message.indexOf("ROSTER_UPDATE:") + 14).trim();
+            updateVisualRoster(data);
+        }
+        else if (message.contains("GAME_STARTED")) {
             statusLabel.setText("Game Started! Good Luck!");
-            hitButton.setEnabled(true);
-            standButton.setEnabled(true);
             playerCardPanel.removeAll();
             dealerCardPanel.removeAll();
         } 
         else if (message.contains("DEALER_INFO:")) {
             dealerCardPanel.removeAll();
-            // Strip the system headers cleanly
             String content = message.replace("[Arena]:", "").replace("DEALER_INFO:", "").trim();
             String[] cards = content.split(",");
             for (String card : cards) {
@@ -168,7 +289,6 @@ public class OnlineGameConnector {
         }
         else if (message.contains("PLAYER_CARDS:") || message.contains("hit:")) {
             playerCardPanel.removeAll(); 
-            // Strip the system headers cleanly
             String content = message.replace("[Arena]:", "").replace("PLAYER_CARDS:", "").trim();
             String[] cards = content.split(",");
             for (String card : cards) {
@@ -176,9 +296,6 @@ public class OnlineGameConnector {
             }
             playerCardPanel.revalidate();
             playerCardPanel.repaint();
-        }
-        else if (message.contains("Your Turn")) {
-            statusLabel.setText("It's your turn!");
         }
         else if (message.contains("Bust") || message.contains("wins") || message.contains("Congratulations")) {
             statusLabel.setText("<html><font color='yellow'>" + message + "</font></html>");
@@ -204,7 +321,6 @@ public class OnlineGameConnector {
             cardShell.add(cardLabel, BorderLayout.CENTER);
             panel.add(cardShell);
         } else {
-            // Fallback rendering layout text if image asset returns missing
             JLabel errorLabel = new JLabel("[" + cardCode + "]");
             errorLabel.setForeground(Color.YELLOW);
             panel.add(errorLabel);

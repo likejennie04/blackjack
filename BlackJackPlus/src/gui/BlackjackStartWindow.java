@@ -41,9 +41,8 @@ public class BlackjackStartWindow {
         
         for (JButton btn : buttons) {
             btn.setAlignmentX(Component.CENTER_ALIGNMENT); 
-            btn.setForeground(Color.PINK); 
             btn.setMaximumSize(buttonSize);
-            btn.setFont(new Font("Times New Roman", Font.BOLD, 14));
+            btn.setFont(new Font("Times New Roman", Font.PLAIN, 14));
         }
         JButton[] menuButtons = {onlineButton, offlineButton, rulesButton, settingButton, exitButton}; 
 		for (JButton btn : menuButtons) {
