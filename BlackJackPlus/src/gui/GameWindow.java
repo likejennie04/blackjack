@@ -127,14 +127,48 @@ public class GameWindow {
         mainPanel.add(controlPanel, BorderLayout.SOUTH);
         
         frame.add(mainPanel);
-<<<<<<< HEAD
-        
+
         triggerCardFlipTimer(); 
         
-=======
-        buildTableRows(); 
->>>>>>> branch 'main' of https://github.com/likejennie04/blackjack.git
         frame.setVisible(true);
+        if (icon.getIconWidth() > 0) {
+            // Create a white container (The "Card")
+            JPanel cardShell = new JPanel(new BorderLayout());
+            cardShell.setPreferredSize(new Dimension(60, 85)); 
+            cardShell.setBackground(Color.WHITE);
+            // Add rounded-style border
+            cardShell.setBorder(BorderFactory.createLineBorder(new Color(40, 40, 40), 1, true));
+            
+            // Scaling the transparent PNG to fit inside the white shell
+            Image scaled = icon.getImage().getScaledInstance(50, 75, Image.SCALE_SMOOTH);
+            JLabel cardLabel = new JLabel(new ImageIcon(scaled));
+            
+            cardShell.add(cardLabel, BorderLayout.CENTER);
+            panel.add(cardShell);
+        } else {
+            JLabel textLabel = new JLabel("[" + cardName + "]");
+            textLabel.setForeground(Color.YELLOW);
+            panel.add(textLabel);
+        }
+        if (icon.getIconWidth() > 0) {
+            // Create a white container (The "Card")
+            JPanel cardShell = new JPanel(new BorderLayout());
+            cardShell.setPreferredSize(new Dimension(60, 85)); 
+            cardShell.setBackground(Color.WHITE);
+            // Add rounded-style border
+            cardShell.setBorder(BorderFactory.createLineBorder(new Color(40, 40, 40), 1, true));
+            
+            // Scaling the transparent PNG to fit inside the white shell
+            Image scaled = icon.getImage().getScaledInstance(50, 75, Image.SCALE_SMOOTH);
+            JLabel cardLabel = new JLabel(new ImageIcon(scaled));
+            
+            cardShell.add(cardLabel, BorderLayout.CENTER);
+            panel.add(cardShell);
+        } else {
+            JLabel textLabel = new JLabel("[" + cardName + "]");
+            textLabel.setForeground(Color.YELLOW);
+            panel.add(textLabel);
+        }
     }
 
     private String getCardImagePath(String cardCode) {
@@ -365,7 +399,6 @@ public class GameWindow {
         for (Computer ai : aiList) playOrder.add(ai);
         playOrder.add(dealer); 
         
-<<<<<<< HEAD
     	for (int round = 0; round < 2; round++ ) {
             for (Hand h : playOrder) {
                 h.addCard(cardDeck.dealCard());
@@ -394,15 +427,5 @@ public class GameWindow {
     	});
     	timer.setRepeats(false); 
     	timer.start();
-=======
-        for (int round = 0; round < 2; round++ ) {
-            for (Hand h : playOrder) h.addCard(cardDeck.dealCard());
-        }
-        
-        hitButton.setEnabled(true);
-        standButton.setEnabled(true);
-        statusLabel.setText("Your Turn! Use the control panel buttons below.");
-        buildTableRows(); 
->>>>>>> branch 'main' of https://github.com/likejennie04/blackjack.git
     }
 }
