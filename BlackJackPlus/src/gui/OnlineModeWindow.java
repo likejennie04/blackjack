@@ -16,7 +16,7 @@ public class OnlineModeWindow {
 		JButton returnButton = new JButton("Return"); 
 		
 		//label
-		JLabel title = new JLabel("Choose Mode");
+		JLabel title = new JLabel("ONLINE Mode");
 		title.setFont(new Font("Times New Roman", Font.BOLD, 50));
 		title.setAlignmentX(Component.CENTER_ALIGNMENT);
 		title.setForeground(Color.PINK);
