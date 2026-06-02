@@ -18,6 +18,7 @@ public class OnlineGameConnector {
     private JButton hitButton;
     private JButton standButton;
     private JButton returnButton;
+    ImageIcon bgImage = new ImageIcon(getClass().getResource("/image/blackjackbackground.png")); 
 
     public OnlineGameConnector(BlackjackClient client) {
         this.client = client;
