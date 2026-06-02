@@ -42,6 +42,7 @@ public class OnlineGameConnector {
 
         dealerCardPanel = new JPanel();
         dealerCardPanel.setBorder(BorderFactory.createTitledBorder("Dealer's Hand"));
+
         playerCardPanel = new JPanel();
         playerCardPanel.setBorder(BorderFactory.createTitledBorder("Your Hand"));
 
@@ -74,6 +75,7 @@ public class OnlineGameConnector {
             try {
                 BufferedReader in = client.getInputStream();
                 String serverMessage;
+
                 while ((serverMessage = in.readLine()) != null) {
                     final String msg = serverMessage;
                     SwingUtilities.invokeLater(() -> processServerMessage(msg));
@@ -97,25 +99,29 @@ public class OnlineGameConnector {
             standButton.setEnabled(true);
             playerCardPanel.removeAll();
             dealerCardPanel.removeAll();
-        } 
-        else if (message.contains("Initial Cards") || message.contains("Your current hand") || message.contains("hit:")) {
+        }
+        else if (message.contains("Initial Cards")
+                || message.contains("Your current hand")
+                || message.contains("hit:")) {
             JLabel cardLabel = new JLabel(message.replace("[Arena]: ", ""));
             cardLabel.setForeground(Color.YELLOW);
             playerCardPanel.add(cardLabel);
             playerCardPanel.revalidate();
             playerCardPanel.repaint();
-        } 
+        }
         else if (message.contains("Your Turn")) {
             statusLabel.setText("It's your turn!");
             hitButton.setEnabled(true);
             standButton.setEnabled(true);
-        } 
+        }
         else if (message.contains("Waiting")) {
             statusLabel.setText("Waiting for other players...");
             hitButton.setEnabled(false);
             standButton.setEnabled(false);
-        } 
-        else if (message.contains("Bust") || message.contains("wins") || message.contains("Congratulations")) {
+        }
+        else if (message.contains("Bust")
+                || message.contains("wins")
+                || message.contains("Congratulations")) {
             statusLabel.setText(message);
             hitButton.setEnabled(false);
             standButton.setEnabled(false);

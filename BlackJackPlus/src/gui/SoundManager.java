@@ -9,14 +9,16 @@ public class SoundManager {
 	private static Clip buttonTwo; 
 	private static Clip hitButton; 
 	private static Clip standButton; 
+	private static Clip summaryClip; 
+	private static boolean musicOn = true; 
 	
 	public static void init () {
 		loadBackgroundMusic("backgroundmusic1.wav"); 
 		buttonOne = loadSoundEffect("button1.wav", 0.0f); 
-		buttonTwo = loadSoundEffect("button2.wav", 0.0f);    
+		buttonTwo = loadSoundEffect("readygo.wav", 0.0f);    
 		hitButton= loadSoundEffect("hitbutton.wav", 0.0f); 
-		standButton = loadSoundEffect("standbutton.wav", 0.0f); 
-
+		standButton = loadSoundEffect("standbutton.wav", 0.0f);
+		summaryClip = loadSoundEffect("onlinemode.endgame.wav",0.0f); 
 	}
 	
 	private static void loadBackgroundMusic (String fileName) {
@@ -89,5 +91,33 @@ public class SoundManager {
 		} else {
 			backgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
 		}
+	}
+//return back to the default music
+	public static void switchDefaultMusic() {
+		if (summaryClip != null && summaryClip.isRunning()) {
+			summaryClip.stop();
+		}
+		if(!musicOn) return; 
+		
+		if (backgroundMusic != null) {
+			backgroundMusic.setFramePosition(0);
+			backgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
+		}
+	}
+	public static void playSummaryMusic() {
+		if (!musicOn) return; 
+		
+		if (backgroundMusic!= null && backgroundMusic.isRunning()) {
+			backgroundMusic.stop();
+		}
+		
+		if (summaryClip!= null) {
+			summaryClip.setFramePosition(0);
+			summaryClip.loop(Clip.LOOP_CONTINUOUSLY);
+		}
+	}
+	public static void stopAllMusic() {
+		if(backgroundMusic!= null) backgroundMusic.stop();
+		if (summaryClip != null) summaryClip.stop();
 	}
 }
