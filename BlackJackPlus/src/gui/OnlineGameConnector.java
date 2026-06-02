@@ -5,6 +5,7 @@ import backend.BlackjackClient;
 import java.awt.*;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.net.URL;
 import java.io.File;
 
 public class OnlineGameConnector {
@@ -112,10 +113,14 @@ public class OnlineGameConnector {
         }).start();
     }
 
-    private String getCardImagePath(String cardCode) {
+    private URL getCardImageURL(String cardCode) {
         cardCode = cardCode.trim().toLowerCase().replace("[", "").replace("]", "");
-        if (cardCode.contains("hidden")) return "image/cards/card_back.png";
-        if (cardCode.isEmpty()) return "image/cards/card_back.png";
+        if (cardCode.contains("hidden")) {
+        	return getClass().getResource("image/cards/card_back.png");
+        }
+        if (cardCode.isEmpty())   {
+        	return getClass().getResource("/image/card_back.png");
+        }
 
         String valuePart = cardCode.substring(0, cardCode.length() - 1);
         char suitPart = cardCode.charAt(cardCode.length() - 1);
@@ -137,9 +142,7 @@ public class OnlineGameConnector {
             case 's': suitName = "spades"; break;
             default:  suitName = "unknown"; break;
         }
-
-        String fullPath = "image/cards/" + valueName + "_of_" + suitName + ".png";
-        return fullPath; 
+        return getClass().getResource("/image/" + valueName + "_of_" + suitName + ".png"); 
     }
 
     private void processServerMessage(String message) {
@@ -154,7 +157,8 @@ public class OnlineGameConnector {
         } 
         else if (message.contains("DEALER_INFO:")) {
             dealerCardPanel.removeAll();
-            String content = message.replace("DEALER_INFO:", "").trim();
+            // Strip the system headers cleanly
+            String content = message.replace("[Arena]:", "").replace("DEALER_INFO:", "").trim();
             String[] cards = content.split(",");
             for (String card : cards) {
                 displayCard(dealerCardPanel, card.trim());
@@ -164,7 +168,8 @@ public class OnlineGameConnector {
         }
         else if (message.contains("PLAYER_CARDS:") || message.contains("hit:")) {
             playerCardPanel.removeAll(); 
-            String content = message.replace("PLAYER_CARDS:", "").replace("[Arena]: ", "").trim();
+            // Strip the system headers cleanly
+            String content = message.replace("[Arena]:", "").replace("PLAYER_CARDS:", "").trim();
             String[] cards = content.split(",");
             for (String card : cards) {
                 displayCard(playerCardPanel, card.trim());
@@ -176,23 +181,21 @@ public class OnlineGameConnector {
             statusLabel.setText("It's your turn!");
         }
         else if (message.contains("Bust") || message.contains("wins") || message.contains("Congratulations")) {
-            statusLabel.setText("<html><font color='red'>" + message + "</font></html>");
+            statusLabel.setText("<html><font color='yellow'>" + message + "</font></html>");
             hitButton.setEnabled(false);
             standButton.setEnabled(false);
         }
     }
 
-    // Helper to render card with white background shell
     private void displayCard(JPanel panel, String cardCode) {
-        String path = getCardImagePath(cardCode);
-        ImageIcon icon = new ImageIcon(path);
+        URL imgURL = getCardImageURL(cardCode);
         
-        if (icon.getIconWidth() > 0) {
-            // Card container for white background
+        if (imgURL != null) {
+            ImageIcon icon = new ImageIcon(imgURL);
+            
             JPanel cardShell = new JPanel(new BorderLayout());
             cardShell.setPreferredSize(new Dimension(75, 105));
             cardShell.setBackground(Color.WHITE);
-            // Add a subtle border to make it pop
             cardShell.setBorder(BorderFactory.createLineBorder(new Color(40, 40, 40), 1, true));
             
             Image scaled = icon.getImage().getScaledInstance(65, 95, Image.SCALE_SMOOTH);
@@ -201,7 +204,10 @@ public class OnlineGameConnector {
             cardShell.add(cardLabel, BorderLayout.CENTER);
             panel.add(cardShell);
         } else {
-            panel.add(new JLabel("[" + cardCode + "]"));
+            // Fallback rendering layout text if image asset returns missing
+            JLabel errorLabel = new JLabel("[" + cardCode + "]");
+            errorLabel.setForeground(Color.YELLOW);
+            panel.add(errorLabel);
         }
     }
 }

@@ -7,9 +7,11 @@ import backend.Hand;
 import backend.House;
 import backend.Player;
 import java.awt.*; 
-import java.awt.event.*; 
+import java.awt.event.*;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Random;
+import javax.swing.Timer; 
 
 public class GameWindow {
     
@@ -30,6 +32,7 @@ public class GameWindow {
     private ArrayList<Player> playerList; 
     private int currentPlayerIndex = 0; 
     private ArrayList<Hand> playOrder = new ArrayList<>(); 
+    private boolean cardsRevealed = false; 
 
     public GameWindow(String mode, int participants, int seed) {
         instance = this;
@@ -72,7 +75,7 @@ public class GameWindow {
         
         JPanel headerPanel = new JPanel(new BorderLayout()); 
         headerPanel.setOpaque(false);
-        statusLabel = new JLabel("Your Turn! Use the control panel buttons below.", JLabel.CENTER); 
+        statusLabel = new JLabel("READY....", JLabel.CENTER); 
         statusLabel.setFont(new Font("Times New Roman", Font.BOLD, 16));
         statusLabel.setForeground(new Color(220, 220, 100)); 
         headerPanel.add(statusLabel, BorderLayout.CENTER); 
@@ -101,6 +104,7 @@ public class GameWindow {
             @Override
             public void actionPerformed(ActionEvent e) {
                 SoundManager.buttonOne(); 
+                System.out.println("Debug: Opening settings from game window");
                 new SettingWindow(); 
             }
         });
@@ -127,19 +131,18 @@ public class GameWindow {
         mainPanel.add(controlPanel, BorderLayout.SOUTH);
         
         frame.add(mainPanel);
-<<<<<<< HEAD
-        
-        triggerCardFlipTimer(); 
-        
-=======
         buildTableRows(); 
->>>>>>> branch 'main' of https://github.com/likejennie04/blackjack.git
+        
+        triggerCardFlipTimer();
+        
         frame.setVisible(true);
     }
 
-    private String getCardImagePath(String cardCode) {
+    private URL getCardImageURL(String cardCode) {
         cardCode = cardCode.trim().toLowerCase();
-        if (cardCode.equals("hidden")) return "image/cards/card_back.png";
+        if (cardCode.equals("hidden")) {
+        	return getClass().getResource("/image/card_back.png");
+        }
 
         String valuePart = cardCode.substring(0, cardCode.length() - 1);
         char suitPart = cardCode.charAt(cardCode.length() - 1);
@@ -161,14 +164,16 @@ public class GameWindow {
             case 's': suitName = "spades"; break;
             default:  suitName = "unknown"; break;
         }
-        return "image/cards/" + valueName + "_of_" + suitName + ".png";
+        return getClass().getResource("/image/" + valueName + "_of_" + suitName + ".png"); 
     }
 
     // 🎯 Improved Display Logic: Wraps the transparent PNG in a white card shell
     private void displayCardImage(JPanel panel, String cardName) {
-        String path = getCardImagePath(cardName);
-        ImageIcon icon = new ImageIcon(path);
+    	URL imgURL = getCardImageURL(cardName);
         
+        // Check if the URL is null (meaning the file wasn't found in src)
+        if (imgURL != null) {
+            ImageIcon icon = new ImageIcon(imgURL);
         if (icon.getIconWidth() > 0) {
             // Create a white container (The "Card")
             JPanel cardShell = new JPanel(new BorderLayout());
@@ -187,6 +192,7 @@ public class GameWindow {
             JLabel textLabel = new JLabel("[" + cardName + "]");
             textLabel.setForeground(Color.YELLOW);
             panel.add(textLabel);
+        	}
         }
     }
 
@@ -213,36 +219,64 @@ public class GameWindow {
     }
 
     private void buildTableRows() {
-        tablePanel.removeAll(); 
-        String[] dealerCards = dealer.getHandStrings();
-        if (hitButton.isEnabled()) {
-            dealerCards = (dealerCards.length >= 2) ? new String[]{"HIDDEN", dealerCards[1]} : new String[]{"HIDDEN"};
-            tablePanel.add(createPlayerRowPanel("Dealer (House)", "??", dealerCards));
-        } else {
-            tablePanel.add(createPlayerRowPanel("Dealer (House)", String.valueOf(dealer.getScore()), dealerCards));
-        }
-        tablePanel.add(Box.createRigidArea(new Dimension(0, 10)));
-    
-        for (int i = 0; i < playerList.size(); i++) {
-            Player p = playerList.get(i); 
-            tablePanel.add(createPlayerRowPanel("Player " + (i+1), String.valueOf(p.getScore()), p.getHandStrings()));
-            tablePanel.add(Box.createRigidArea(new Dimension(0, 10)));
-        }
-    
-        if (gameMode.equals("COMPUTER")) {
-            for (int i = 0; i < aiList.size(); i++) {
-                Computer ai = aiList.get(i);
-                tablePanel.add(createPlayerRowPanel("AI Bot " + (i + 2), String.valueOf(ai.getScore()), ai.getHandStrings()));
-                tablePanel.add(Box.createRigidArea(new Dimension(0, 10)));
-            }
-        }
-        tablePanel.revalidate();
-        tablePanel.repaint();
+    	 tablePanel.removeAll(); 
+         String[] dealerCards = dealer.getHandStrings();
+         
+         if (!cardsRevealed) {
+             String[] hiddenDealer = new String[dealerCards.length];
+             for(int i=0; i<hiddenDealer.length; i++) hiddenDealer[i] = "HIDDEN";
+             tablePanel.add(createPlayerRowPanel("Dealer (House)", "??", hiddenDealer));
+         } else {
+             if (hitButton.isEnabled()) {
+                 dealerCards = (dealerCards.length >= 2) ? new String[]{"HIDDEN", dealerCards[1]} : new String[]{"HIDDEN"};
+                 tablePanel.add(createPlayerRowPanel("Dealer (House)", "??", dealerCards));
+             } else {
+                 tablePanel.add(createPlayerRowPanel("Dealer (House)", String.valueOf(dealer.getScore()), dealerCards));
+             }
+         }
+        
+         tablePanel.add(Box.createRigidArea(new Dimension(0, 10)));
+     
+         for (int i = 0; i < playerList.size(); i++) {
+             Player p = playerList.get(i); 
+             String[] pCards = p.getHandStrings();
+             String scoreStr = String.valueOf(p.getScore());
+             
+             if (!cardsRevealed) {
+                 scoreStr = "??";
+                 pCards = new String[pCards.length];
+                 for(int j=0; j<pCards.length; j++) pCards[j] = "HIDDEN";
+             }
+             
+             tablePanel.add(createPlayerRowPanel("Player " + (i+1), scoreStr, pCards));
+             tablePanel.add(Box.createRigidArea(new Dimension(0, 10)));
+         }
+     
+         if (gameMode.equals("COMPUTER")) {
+             for (int i = 0; i < aiList.size(); i++) {
+                 Computer ai = aiList.get(i);
+                 String[] aiCards = ai.getHandStrings();
+                 String scoreStr = String.valueOf(ai.getScore());
+                 
+                 // --- FIXED: Hide AI hands and scores during face-down phase ---
+                 if (!cardsRevealed) {
+                     scoreStr = "??";
+                     aiCards = new String[aiCards.length];
+                     for(int j=0; j<aiCards.length; j++) aiCards[j] = "HIDDEN";
+                 }
+                 
+                 tablePanel.add(createPlayerRowPanel("AI Bot " + (i + 2), scoreStr, aiCards));
+                 tablePanel.add(Box.createRigidArea(new Dimension(0, 10)));
+             }
+         }
+         tablePanel.revalidate();
+         tablePanel.repaint();
+
     }
 
     private JPanel createPlayerRowPanel(String name, String currentScore, String[] cards) {
         JPanel row = new JPanel(new BorderLayout()); 
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 115)); // Adjusted for vertical card shells
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110)); // Bumped height slightly for cards
         row.setBackground(Config.tableColor); 
         row.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(255, 255, 255, 30), 1),
@@ -265,13 +299,18 @@ public class GameWindow {
         identityLabelPanel.add(scoreTxT); 
         row.add(identityLabelPanel, BorderLayout.WEST); 
         
-        // FlowLayout spacing adjusted for clear separation
-        JPanel handPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
+        JPanel handPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         handPanel.setOpaque(false);
         
+        // 🔄 FIXED: Loop through strings and feed them directly into your image renderer
         for (String card : cards) {
-            displayCardImage(handPanel, card);
+            if (card.equals("HIDDEN")) {
+                displayCardImage(handPanel, "hidden");
+            } else {
+                displayCardImage(handPanel, card); 
+            }
         }
+        
         row.add(handPanel, BorderLayout.CENTER); 
         return row; 
     }
@@ -289,6 +328,7 @@ public class GameWindow {
     }
 
     private void handleStandAction() {
+        System.out.println("Debug: Player stands, switching turns...");
         if (gameMode.equals("COMPUTER")) {
             Thread[] aiThreads = new Thread[aiList.size()];
             for (int i = 0; i < aiList.size(); i++) {
@@ -307,7 +347,14 @@ public class GameWindow {
                 @Override
                 protected void done() {
                     buildTableRows();
-                    evaluateFinalWinners();
+                    Timer endRoundTimer = new Timer(3000, new ActionListener() {
+                    	@Override
+                    	public void actionPerformed(ActionEvent e) {
+                    		evaluateFinalWinners(); 
+                    	}
+                    }); 
+                    endRoundTimer.setRepeats(false);
+                    endRoundTimer.start();
                 }
             }.execute();
         } else {
@@ -321,13 +368,22 @@ public class GameWindow {
             standButton.setEnabled(false);
             dealer.runTurn(cardDeck);
             buildTableRows(); 
-            evaluateFinalWinners(); 
+            statusLabel.setText("Round Over!"); 
+            
+            Timer endRoundTimer = new Timer (3000, new ActionListener() {
+            	@Override
+            	public void actionPerformed(ActionEvent e) {
+            		evaluateFinalWinners(); 
+            	}
+            });
+            endRoundTimer.setRepeats(false); 
+            endRoundTimer.start(); 
         }
     }
 
     private void evaluateFinalWinners() {
-        String bannerResultsText = FinalBoardPrint.showSummary(frame, dealer, playerList, aiList, gameMode, this); 
-        statusLabel.setText(bannerResultsText); 
+    	String bannerResultsText = FinalBoardPrint.showSummary(frame, dealer, playerList, aiList, gameMode, this); 
+    	statusLabel.setText(bannerResultsText); 
     } 
 
     private void styleActionButton(JButton button, Color bg) {
@@ -341,9 +397,13 @@ public class GameWindow {
     }
     
     public void restartMatch() {
+        System.out.println("Resetting table for next round...."); 
+        
         this.cardDeck = new Deck(); 
         this.cardDeck.shuffle(new Random().nextInt(10000));
+        
         currentPlayerIndex = 0; 
+        
         dealer.clearHand(); 
         playerList.clear(); 
         aiList.clear(); 
@@ -365,44 +425,30 @@ public class GameWindow {
         for (Computer ai : aiList) playOrder.add(ai);
         playOrder.add(dealer); 
         
-<<<<<<< HEAD
-    	for (int round = 0; round < 2; round++ ) {
-            for (Hand h : playOrder) {
-                h.addCard(cardDeck.dealCard());
-            }
-    	}
-    	
-        triggerCardFlipTimer(); 
-    }
-    
-    private void triggerCardFlipTimer() {
-    	cardsRevealed = false; 
-    	hitButton.setEnabled(false);
-    	standButton.setEnabled(false); 
-        statusLabel.setText("Dealing cards face down...");
-    	buildTableRows(); 
-    	
-    	Timer timer = new Timer(1500, new ActionListener() { // 1.5 seconds delay
-    		@Override 
-    		public void actionPerformed(ActionEvent e) {
-    			cardsRevealed = true; 
-    			hitButton.setEnabled(true); 
-    			standButton.setEnabled(true);
-                statusLabel.setText("Your Turn! Use the control panel buttons below.");
-                buildTableRows(); 
-    		}
-    	});
-    	timer.setRepeats(false); 
-    	timer.start();
-=======
         for (int round = 0; round < 2; round++ ) {
             for (Hand h : playOrder) h.addCard(cardDeck.dealCard());
         }
         
-        hitButton.setEnabled(true);
-        standButton.setEnabled(true);
-        statusLabel.setText("Your Turn! Use the control panel buttons below.");
-        buildTableRows(); 
->>>>>>> branch 'main' of https://github.com/likejennie04/blackjack.git
+        triggerCardFlipTimer(); 
     }
-}
+    private void triggerCardFlipTimer(){
+    	cardsRevealed = false; 
+    	hitButton.setEnabled(false);
+    	standButton.setEnabled(false);
+    	 statusLabel.setText("Dealing cards face down...");
+     	buildTableRows(); 
+     	
+     	Timer timer = new Timer(1500, new ActionListener() { // 1.5 seconds delay
+     		@Override 
+     		public void actionPerformed(ActionEvent e) {
+     			cardsRevealed = true; 
+     			hitButton.setEnabled(true); 
+     			standButton.setEnabled(true);
+                 statusLabel.setText("Your Turn! Use the control panel buttons below.");
+                 buildTableRows(); // --- FIXED: Added repaint trigger to visually flip the cards up
+     		}
+     	});
+     	timer.setRepeats(false); 
+     	timer.start();
+    }
+ }
