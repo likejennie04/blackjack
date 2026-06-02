@@ -42,7 +42,7 @@ public class HostServerWindow {
         
         // step 1 : start the server
         startServerButton.addActionListener(e -> {
-            SoundManager.buttonOne();
+            SoundManager.buttonThree();
             new Thread(() -> {
                 try {
                     BlackjackServer.main(null); 
@@ -66,7 +66,7 @@ public class HostServerWindow {
         
         // step 2 : get the card
         startGameButton.addActionListener(e -> {
-            SoundManager.buttonOne();
+            SoundManager.buttonTwo();
             if (hostClient != null) {
                 
                 hostClient.sendMove("START_COMMAND"); 

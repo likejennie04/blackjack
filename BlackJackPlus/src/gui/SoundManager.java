@@ -10,12 +10,14 @@ public class SoundManager {
 	private static Clip hitButton; 
 	private static Clip standButton; 
 	private static Clip summaryClip; 
+	private static Clip buttonThree; 
 	private static boolean musicOn = true; 
 	
 	public static void init () {
 		loadBackgroundMusic("backgroundmusic1.wav"); 
 		buttonOne = loadSoundEffect("button1.wav", 0.0f); 
-		buttonTwo = loadSoundEffect("readygo.wav", 0.0f);    
+		buttonTwo = loadSoundEffect("readygo.wav", 0.0f);  
+		buttonThree  =loadSoundEffect("button2.wav", 0.0f); 
 		hitButton= loadSoundEffect("hitbutton.wav", 0.0f); 
 		standButton = loadSoundEffect("standbutton.wav", 0.0f);
 		summaryClip = loadSoundEffect("onlinemode.endgame.wav",0.0f); 
@@ -64,6 +66,9 @@ public class SoundManager {
 	}
 	public static void standButton() {
 		triggerClip(standButton); 
+	}
+	public static void buttonThree() {
+		triggerClip(buttonThree); 
 	}
 	
 	
