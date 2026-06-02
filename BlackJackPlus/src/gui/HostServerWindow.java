@@ -90,7 +90,7 @@ public class HostServerWindow {
         panel.add(Box.createRigidArea(new Dimension(0, 30)));
         panel.add(startServerButton);
         panel.add(Box.createRigidArea(new Dimension(0, 15)));
-        panel.add(startGameButton); // 👈 加入界面
+        panel.add(startGameButton); 
         panel.add(Box.createRigidArea(new Dimension(0, 15)));
         panel.add(returnButton); 
         panel.add(Box.createVerticalGlue()); 
