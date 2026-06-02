@@ -109,4 +109,4 @@ public class JoinServerWindow {
         frame.add(panel);
         frame.setVisible(true);
     }
-}
+} //chanfkh
