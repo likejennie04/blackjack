@@ -15,7 +15,7 @@ public class SoundManager {
 	public static void init () {
 		loadBackgroundMusic("backgroundmusic1.wav"); 
 		buttonOne = loadSoundEffect("button1.wav", 0.0f); 
-		buttonTwo = loadSoundEffect("button2.wav", 0.0f);    
+		buttonTwo = loadSoundEffect("readygo.wav", 0.0f);    
 		hitButton= loadSoundEffect("hitbutton.wav", 0.0f); 
 		standButton = loadSoundEffect("standbutton.wav", 0.0f);
 		summaryClip = loadSoundEffect("onlinemode.endgame.wav",0.0f); 

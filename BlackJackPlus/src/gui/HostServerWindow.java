@@ -7,7 +7,10 @@ import java.awt.*;
 
 public class HostServerWindow {
     private JFrame frame;
-    
+    private JButton startServerButton;
+    private JButton startGameButton; 
+    private BlackjackClient hostClient; 
+
     public HostServerWindow() {
         frame = new JFrame("Host Server"); 
         frame.setSize(800, 600); 
@@ -27,17 +30,19 @@ public class HostServerWindow {
         info.setForeground(Color.LIGHT_GRAY);
         info.setAlignmentX(Component.CENTER_ALIGNMENT);
         
-        JButton startButton = new JButton("Start Server"); 
+        startServerButton = new JButton("1. Start Server"); 
+        startGameButton = new JButton("2. Start Game (Deal Cards)"); 
+        startGameButton.setEnabled(false); 
+        
         JButton returnButton = new JButton("Return");
         
-        startButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        startServerButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        startGameButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         returnButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         
-        startButton.addActionListener(e -> {
+        // step 1 : start the server
+        startServerButton.addActionListener(e -> {
             SoundManager.buttonOne();
-            System.out.println("Starting server thread...");
-            
-            // 1. Spin up the server in the background
             new Thread(() -> {
                 try {
                     BlackjackServer.main(null); 
@@ -46,27 +51,29 @@ public class HostServerWindow {
                 }
             }).start(); 
             
-            // 2. Give the server socket a brief moment (300ms) to open up and bind to the port
-            try {
-                Thread.sleep(300);
-            } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-            }
+            try { Thread.sleep(500); } catch (InterruptedException ex) {}
             
-            // 3. Try connecting the local host client safely inside a try-catch block
             try {
-                BlackjackClient client = new BlackjackClient("localhost"); 
-                
-                JOptionPane.showMessageDialog(frame, "Server started on port 8888! Joining game...");
-                
-                new OnlineGameConnector(client); 
-                frame.dispose();
+                hostClient = new BlackjackClient("localhost"); 
+                startServerButton.setEnabled(false); // 防止重复启动
+                startServerButton.setText("Server Running...");
+                startGameButton.setEnabled(true); // 👈 激活开始游戏按钮
+                JOptionPane.showMessageDialog(frame, "Server is live! Wait for friends to join, then click 'Start Game'.");
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(frame, 
-                    "Server thread started, but local client failed to connect.\n" + ex.getMessage(),
-                    "Connection Error", 
-                    JOptionPane.ERROR_MESSAGE);
-                ex.printStackTrace();
+                JOptionPane.showMessageDialog(frame, "Error: " + ex.getMessage());
+            }
+        });
+        
+        // step 2 : get the card
+        startGameButton.addActionListener(e -> {
+            SoundManager.buttonOne();
+            if (hostClient != null) {
+                
+                hostClient.sendMove("START_COMMAND"); 
+                
+                
+                new OnlineGameConnector(hostClient); 
+                frame.dispose();
             }
         });
         
@@ -81,7 +88,9 @@ public class HostServerWindow {
         panel.add(Box.createRigidArea(new Dimension(0, 20)));
         panel.add(info); 
         panel.add(Box.createRigidArea(new Dimension(0, 30)));
-        panel.add(startButton);
+        panel.add(startServerButton);
+        panel.add(Box.createRigidArea(new Dimension(0, 15)));
+        panel.add(startGameButton); // 👈 加入界面
         panel.add(Box.createRigidArea(new Dimension(0, 15)));
         panel.add(returnButton); 
         panel.add(Box.createVerticalGlue()); 

@@ -138,14 +138,13 @@ public class SettingWindow {
             frame.dispose();
         });
 
-        JButton closeBtn = new JButton("Back");
+        JButton closeBtn = new JButton("Return");
         closeBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         closeBtn.setMaximumSize(new Dimension(200, 40));
         closeBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                SoundManager.buttonOne(); 
-                new BlackjackStartWindow(); 
+                SoundManager.buttonOne();  
                 frame.dispose();
             }
         });
