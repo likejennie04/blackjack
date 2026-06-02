@@ -21,7 +21,7 @@ public class OnlineModeWindow {
 		title.setAlignmentX(Component.CENTER_ALIGNMENT);
 		title.setForeground(Color.PINK);
 		
-		ImageIcon bgImage = new ImageIcon("/Users/lucan/Downloads/blackjackbackground.png");
+        ImageIcon bgImage = new ImageIcon(getClass().getResource("/image/blackjackbackground.png")); 
 		
 		
 		//panel
