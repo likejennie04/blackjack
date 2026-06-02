@@ -19,7 +19,7 @@ public class BlackjackStartWindow {
         frame.setLocationRelativeTo(null); 
         
         
-        ImageIcon bgImage = new ImageIcon("image/blackjackbackground.png");
+        ImageIcon bgImage = new ImageIcon(getClass().getResource("/image/blackjackbackground.png")); 
         
         //label
         JLabel panel = new JLabel(bgImage); 
@@ -41,6 +41,7 @@ public class BlackjackStartWindow {
         
         for (JButton btn : buttons) {
             btn.setAlignmentX(Component.CENTER_ALIGNMENT); 
+            btn.setForeground(Color.PINK); 
             btn.setMaximumSize(buttonSize);
             btn.setFont(new Font("Times New Roman", Font.BOLD, 14));
         }
@@ -74,6 +75,7 @@ public class BlackjackStartWindow {
             public void actionPerformed(ActionEvent e) {
                 System.out.println("Debug: Opening Rules Window...");
                 new RulesWindow(); 
+                // Usually we don't dispose frame here so user can go back
             }
         });
         
