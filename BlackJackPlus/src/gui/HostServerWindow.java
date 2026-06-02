@@ -105,7 +105,7 @@ public class HostServerWindow {
         
         // Step 2: Transition to Game Arena
         startGameButton.addActionListener(e -> {
-            SoundManager.buttonOne();
+            SoundManager.buttonTwo();
             if (hostClient != null) {
                 hostClient.sendMove("START_COMMAND"); 
                 new OnlineGameConnector(hostClient); 
