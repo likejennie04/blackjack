@@ -97,7 +97,6 @@ public class SoundManager {
 			backgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
 		}
 	}
-//return back to the default music
 	public static void switchDefaultMusic() {
 		if (summaryClip != null && summaryClip.isRunning()) {
 			summaryClip.stop();

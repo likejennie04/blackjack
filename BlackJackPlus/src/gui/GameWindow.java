@@ -10,7 +10,6 @@ import java.awt.*;
 import java.awt.event.*; 
 import java.util.ArrayList;
 import java.util.Random;
-import javax.swing.Timer; 
 
 public class GameWindow {
     
@@ -31,7 +30,6 @@ public class GameWindow {
     private ArrayList<Player> playerList; 
     private int currentPlayerIndex = 0; 
     private ArrayList<Hand> playOrder = new ArrayList<>(); 
-    private boolean cardsRevealed = false; 
 
     public GameWindow(String mode, int participants, int seed) {
         instance = this;
@@ -74,8 +72,7 @@ public class GameWindow {
         
         JPanel headerPanel = new JPanel(new BorderLayout()); 
         headerPanel.setOpaque(false);
-        // Set an initial loading message while cards are faced down
-        statusLabel = new JLabel("Dealing cards face down...", JLabel.CENTER); 
+        statusLabel = new JLabel("Your Turn! Use the control panel buttons below.", JLabel.CENTER); 
         statusLabel.setFont(new Font("Times New Roman", Font.BOLD, 16));
         statusLabel.setForeground(new Color(220, 220, 100)); 
         headerPanel.add(statusLabel, BorderLayout.CENTER); 
@@ -130,10 +127,7 @@ public class GameWindow {
         mainPanel.add(controlPanel, BorderLayout.SOUTH);
         
         frame.add(mainPanel);
-        
-        // --- FIXED: Start the countdown timer right here ---
-        triggerCardFlipTimer(); 
-        
+        buildTableRows(); 
         frame.setVisible(true);
     }
 
@@ -164,6 +158,7 @@ public class GameWindow {
         return "image/cards/" + valueName + "_of_" + suitName + ".png";
     }
 
+    // 🎯 Improved Display Logic: Wraps the transparent PNG in a white card shell
     private void displayCardImage(JPanel panel, String cardName) {
         String path = getCardImagePath(cardName);
         ImageIcon icon = new ImageIcon(path);
@@ -214,51 +209,24 @@ public class GameWindow {
     private void buildTableRows() {
         tablePanel.removeAll(); 
         String[] dealerCards = dealer.getHandStrings();
-        
-        if (!cardsRevealed) {
-            String[] hiddenDealer = new String[dealerCards.length];
-            for(int i=0; i<hiddenDealer.length; i++) hiddenDealer[i] = "HIDDEN";
-            tablePanel.add(createPlayerRowPanel("Dealer (House)", "??", hiddenDealer));
+        if (hitButton.isEnabled()) {
+            dealerCards = (dealerCards.length >= 2) ? new String[]{"HIDDEN", dealerCards[1]} : new String[]{"HIDDEN"};
+            tablePanel.add(createPlayerRowPanel("Dealer (House)", "??", dealerCards));
         } else {
-            if (hitButton.isEnabled()) {
-                dealerCards = (dealerCards.length >= 2) ? new String[]{"HIDDEN", dealerCards[1]} : new String[]{"HIDDEN"};
-                tablePanel.add(createPlayerRowPanel("Dealer (House)", "??", dealerCards));
-            } else {
-                tablePanel.add(createPlayerRowPanel("Dealer (House)", String.valueOf(dealer.getScore()), dealerCards));
-            }
+            tablePanel.add(createPlayerRowPanel("Dealer (House)", String.valueOf(dealer.getScore()), dealerCards));
         }
-       
         tablePanel.add(Box.createRigidArea(new Dimension(0, 10)));
     
         for (int i = 0; i < playerList.size(); i++) {
             Player p = playerList.get(i); 
-            String[] pCards = p.getHandStrings();
-            String scoreStr = String.valueOf(p.getScore());
-            
-            if (!cardsRevealed) {
-                scoreStr = "??";
-                pCards = new String[pCards.length];
-                for(int j=0; j<pCards.length; j++) pCards[j] = "HIDDEN";
-            }
-            
-            tablePanel.add(createPlayerRowPanel("Player " + (i+1), scoreStr, pCards));
+            tablePanel.add(createPlayerRowPanel("Player " + (i+1), String.valueOf(p.getScore()), p.getHandStrings()));
             tablePanel.add(Box.createRigidArea(new Dimension(0, 10)));
         }
     
         if (gameMode.equals("COMPUTER")) {
             for (int i = 0; i < aiList.size(); i++) {
                 Computer ai = aiList.get(i);
-                String[] aiCards = ai.getHandStrings();
-                String scoreStr = String.valueOf(ai.getScore());
-                
-                // --- FIXED: Hide AI hands and scores during face-down phase ---
-                if (!cardsRevealed) {
-                    scoreStr = "??";
-                    aiCards = new String[aiCards.length];
-                    for(int j=0; j<aiCards.length; j++) aiCards[j] = "HIDDEN";
-                }
-                
-                tablePanel.add(createPlayerRowPanel("AI Bot " + (i + 2), scoreStr, aiCards));
+                tablePanel.add(createPlayerRowPanel("AI Bot " + (i + 2), String.valueOf(ai.getScore()), ai.getHandStrings()));
                 tablePanel.add(Box.createRigidArea(new Dimension(0, 10)));
             }
         }
@@ -333,14 +301,7 @@ public class GameWindow {
                 @Override
                 protected void done() {
                     buildTableRows();
-                    Timer endRoundTimer = new Timer(3000, new ActionListener() {
-                    	@Override
-                    	public void actionPerformed(ActionEvent e) {
-                    		evaluateFinalWinners(); 
-                    	}
-                    }); 
-                    endRoundTimer.setRepeats(false);
-                    endRoundTimer.start();
+                    evaluateFinalWinners();
                 }
             }.execute();
         } else {
@@ -354,16 +315,7 @@ public class GameWindow {
             standButton.setEnabled(false);
             dealer.runTurn(cardDeck);
             buildTableRows(); 
-            statusLabel.setText("Round Over!"); 
-            
-            Timer endRoundTimer = new Timer (3000, new ActionListener() {
-            	@Override
-            	public void actionPerformed(ActionEvent e) {
-            		evaluateFinalWinners(); 
-            	}
-            });
-            endRoundTimer.setRepeats(false); 
-            endRoundTimer.start(); 
+            evaluateFinalWinners(); 
         }
     }
 
