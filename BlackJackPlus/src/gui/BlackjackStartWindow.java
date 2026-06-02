@@ -19,7 +19,7 @@ public class BlackjackStartWindow {
         frame.setLocationRelativeTo(null); 
         
         
-        ImageIcon bgImage = new ImageIcon(getClass().getResource("/image/blackjackbackground.png")); 
+        ImageIcon bgImage = new ImageIcon("image/blackjackbackground.png");
         
         //label
         JLabel panel = new JLabel(bgImage); 

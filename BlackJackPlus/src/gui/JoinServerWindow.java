@@ -8,12 +8,13 @@ import java.awt.event.MouseEvent;
 
 public class JoinServerWindow {
     private JFrame frame;
+    private JTextField nameField; 
     private JTextField ipField; 
     private int currentAvatarIndex = 0;
 
     public JoinServerWindow() {
         frame = new JFrame("Join Server"); 
-        frame.setSize(800, 600); 
+        frame.setSize(800, 650); 
         frame.setLocationRelativeTo(null);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         
@@ -26,6 +27,7 @@ public class JoinServerWindow {
         title.setForeground(Color.PINK);
         title.setAlignmentX(Component.CENTER_ALIGNMENT); 
 
+        // Avatar Area
         JLabel avatarLabel = new JLabel();
         if (!AvatarManager.getAllAvatars().isEmpty()) {
             avatarLabel.setIcon(AvatarManager.getAllAvatars().get(0));
@@ -49,6 +51,18 @@ public class JoinServerWindow {
         hintLabel.setFont(new Font("Arial", Font.ITALIC, 11));
         hintLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         
+    
+        JLabel nameLabel = new JLabel("Enter Your Name: "); 
+        nameLabel.setForeground(Color.LIGHT_GRAY);
+        nameLabel.setFont(new Font("Times New Roman", Font.PLAIN, 14));
+        nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        nameField = new JTextField("Player_" + (int)(Math.random() * 900 + 100), 15); // 默认随机名如 Player_342
+        nameField.setMaximumSize(new Dimension(200, 30));
+        nameField.setHorizontalAlignment(JTextField.CENTER);
+        nameField.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // IP Address Area
         JLabel promptLabel = new JLabel("Enter Host IP Address: "); 
         promptLabel.setForeground(Color.LIGHT_GRAY);
         promptLabel.setFont(new Font("Times New Roman", Font.PLAIN, 14));
@@ -68,16 +82,21 @@ public class JoinServerWindow {
         joinButton.addActionListener(e -> {
             SoundManager.buttonOne(); 
             String targetIp = ipField.getText().trim(); 
+            String playerName = nameField.getText().trim(); 
             
             try {
                 BlackjackClient client = new BlackjackClient(targetIp); 
                 client.setAvatarId(currentAvatarIndex);
+                client.setPlayerName(playerName); 
+                
+                
+                client.sendMove("NAME_REGISTER:" + playerName);
                 
                 new OnlineGameConnector(client); 
                 frame.dispose(); 
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(frame, 
-                    "Could not connect to server at " + targetIp + "\nMake sure the host has started the server.",
+                    "Could not connect to server at " + targetIp,
                     "Connection Error", 
                     JOptionPane.ERROR_MESSAGE); 
                 ex.printStackTrace();
@@ -90,17 +109,24 @@ public class JoinServerWindow {
             new BlackjackStartWindow(); 
         });
         
+        // Add to layout
         panel.add(Box.createVerticalGlue());
         panel.add(title); 
-        panel.add(Box.createRigidArea(new Dimension(0, 25)));
+        panel.add(Box.createRigidArea(new Dimension(0, 15)));
         panel.add(avatarLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
         panel.add(hintLabel);
-        panel.add(Box.createRigidArea(new Dimension(0, 25)));
+        panel.add(Box.createRigidArea(new Dimension(0, 15)));
+        
+        panel.add(nameLabel); // 👈 放入界面
+        panel.add(Box.createRigidArea(new Dimension(0, 5)));
+        panel.add(nameField); 
+        panel.add(Box.createRigidArea(new Dimension(0, 15)));
+        
         panel.add(promptLabel);
-        panel.add(Box.createRigidArea(new Dimension(0, 10))); 
+        panel.add(Box.createRigidArea(new Dimension(0, 5))); 
         panel.add(ipField); 
-        panel.add(Box.createRigidArea(new Dimension(0, 30)));
+        panel.add(Box.createRigidArea(new Dimension(0, 25)));
         panel.add(joinButton); 
         panel.add(Box.createRigidArea(new Dimension(0, 15)));
         panel.add(returnButton); 
@@ -109,4 +135,4 @@ public class JoinServerWindow {
         frame.add(panel);
         frame.setVisible(true);
     }
-} //chanfkh
+}
