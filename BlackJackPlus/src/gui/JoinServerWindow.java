@@ -80,7 +80,7 @@ public class JoinServerWindow {
         returnButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         
         joinButton.addActionListener(e -> {
-            SoundManager.buttonOne(); 
+            SoundManager.buttonTwo();
             String targetIp = ipField.getText().trim(); 
             String playerName = nameField.getText().trim(); 
             
