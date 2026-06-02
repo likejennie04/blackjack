@@ -9,8 +9,8 @@ public class BlackjackClient {
     private BufferedReader in;
     private String serverIp;
     private int port;
+    private int avatarId = 0; 
 
-    // CONSTRUCTOR: This is what your GUI windows are looking for!
     public BlackjackClient(String ip) {
         this.serverIp = ip;
         this.port = 8888;
@@ -22,30 +22,35 @@ public class BlackjackClient {
             this.socket = new Socket(serverIp, port);
             System.out.println("Connected to the Blackjack Arena at " + serverIp);
 
-            // Set up input and output streams for network communication
             this.out = new PrintWriter(socket.getOutputStream(), true);
             this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
         } catch (IOException e) {
             System.err.println("Could not connect to server at " + serverIp + ":" + port);
-            // Re-throw exception so the GUI window knows the connection failed
             throw new RuntimeException("Connection failed", e); 
         }
     }
 
-    // Method to send moves (hit/stand) from your GUI buttons to the server
+    public void setAvatarId(int id) {
+        this.avatarId = id;
+        
+    }
+
+    // 新增：获取头像 ID
+    public int getAvatarId() {
+        return this.avatarId;
+    }
+
     public void sendMove(String move) {
         if (out != null) {
             out.println(move);
         }
     }
 
-    // Method to let your OnlineGameWindow get the input stream to listen for server cards/scores
     public BufferedReader getInputStream() {
         return this.in;
     }
 
-    // Gracefully close the connection when a player leaves
     public void disconnect() {
         try {
             if (socket != null && !socket.isClosed()) {
@@ -56,12 +61,10 @@ public class BlackjackClient {
         }
     }
 
-    // Keeping your original main method here just in case you still want to run it via console
     public static void main(String[] args) {
         try {
             BlackjackClient client = new BlackjackClient("localhost");
             
-            // Console listener loop fallback
             Thread listenerThread = new Thread(() -> {
                 try {
                     BufferedReader in = client.getInputStream();
@@ -91,4 +94,4 @@ public class BlackjackClient {
             System.err.println("Console client failed to start.");
         }
     }
-} //lucan shit
+}
