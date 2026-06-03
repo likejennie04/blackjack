@@ -167,22 +167,17 @@ public class GameWindow {
         return getClass().getResource("/image/" + valueName + "_of_" + suitName + ".png"); 
     }
 
-    // 🎯 Improved Display Logic: Wraps the transparent PNG in a white card shell
     private void displayCardImage(JPanel panel, String cardName) {
     	URL imgURL = getCardImageURL(cardName);
         
-        // Check if the URL is null (meaning the file wasn't found in src)
         if (imgURL != null) {
             ImageIcon icon = new ImageIcon(imgURL);
         if (icon.getIconWidth() > 0) {
-            // Create a white container (The "Card")
             JPanel cardShell = new JPanel(new BorderLayout());
             cardShell.setPreferredSize(new Dimension(60, 85)); 
             cardShell.setBackground(Color.WHITE);
-            // Add rounded-style border
             cardShell.setBorder(BorderFactory.createLineBorder(new Color(40, 40, 40), 1, true));
             
-            // Scaling the transparent PNG to fit inside the white shell
             Image scaled = icon.getImage().getScaledInstance(50, 75, Image.SCALE_SMOOTH);
             JLabel cardLabel = new JLabel(new ImageIcon(scaled));
             
@@ -194,6 +189,16 @@ public class GameWindow {
             panel.add(textLabel);
         	}
         }
+    }
+
+    private void styleActionButton(JButton button, Color bg) {
+        button.setPreferredSize(new Dimension(120, 40)); 
+        button.setBackground(bg); 
+        button.setForeground(Color.WHITE); 
+        button.setFont(new Font("Times New Roman", Font.BOLD, 14)); 
+        button.setFocusPainted(false); 
+        button.setBorderPainted(false); 
+        button.setOpaque(true); 
     }
 
     public void applyResolution(int w, int h) {
@@ -251,6 +256,10 @@ public class GameWindow {
              tablePanel.add(createPlayerRowPanel("Player " + (i+1), scoreStr, pCards));
              tablePanel.add(Box.createRigidArea(new Dimension(0, 10)));
          }
+         
+         /*
+          * GAME LOGIC
+          */
      
          if (gameMode.equals("COMPUTER")) {
              for (int i = 0; i < aiList.size(); i++) {
@@ -258,7 +267,6 @@ public class GameWindow {
                  String[] aiCards = ai.getHandStrings();
                  String scoreStr = String.valueOf(ai.getScore());
                  
-                 // --- FIXED: Hide AI hands and scores during face-down phase ---
                  if (!cardsRevealed) {
                      scoreStr = "??";
                      aiCards = new String[aiCards.length];
@@ -302,7 +310,7 @@ public class GameWindow {
         JPanel handPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         handPanel.setOpaque(false);
         
-        // 🔄 FIXED: Loop through strings and feed them directly into your image renderer
+       
         for (String card : cards) {
             if (card.equals("HIDDEN")) {
                 displayCardImage(handPanel, "hidden");
@@ -318,10 +326,16 @@ public class GameWindow {
     private void handelHitAction() {
         Player currentPlayer = playerList.get(currentPlayerIndex);
         currentPlayer.addCard(cardDeck.dealCard());
-        if (currentPlayer.getScore() > 21) {
+        
+        if (currentPlayer.isFiveCardCharlie())  {
+        	statusLabel.setText(" Player " + (currentPlayerIndex + 1) + " achieved a 5-Card Charlie!");
+        	handleStandAction();
+        }
+        else if (currentPlayer.isBusted()) {
             statusLabel.setText("Player " + (currentPlayerIndex + 1) + " busted!");
             handleStandAction();
-        } else {
+        }
+        else {
             statusLabel.setText("Player " + (currentPlayerIndex + 1) + " drew a card.");
         }
         buildTableRows();
@@ -329,72 +343,84 @@ public class GameWindow {
 
     private void handleStandAction() {
         System.out.println("Debug: Player stands, switching turns...");
+        hitButton.setEnabled(false);
+        standButton.setEnabled(false); 
+        
         if (gameMode.equals("COMPUTER")) {
-            Thread[] aiThreads = new Thread[aiList.size()];
-            for (int i = 0; i < aiList.size(); i++) {
-                aiThreads[i] = new Thread(aiList.get(i)); 
-                aiThreads[i].start();
-            }
-            new SwingWorker<Void, Void>() {
-                @Override
-                protected Void doInBackground() throws Exception {
-                    for (Thread t : aiThreads) t.join();
-                    hitButton.setEnabled(false);
-                    standButton.setEnabled(false); 
-                    dealer.runTurn(cardDeck); 
-                    return null;
-                }
-                @Override
-                protected void done() {
-                    buildTableRows();
-                    Timer endRoundTimer = new Timer(3000, new ActionListener() {
-                    	@Override
-                    	public void actionPerformed(ActionEvent e) {
-                    		evaluateFinalWinners(); 
-                    	}
-                    }); 
-                    endRoundTimer.setRepeats(false);
-                    endRoundTimer.start();
-                }
-            }.execute();
+        	processNextAiTurn(0);
         } else {
-            currentPlayerIndex++; 
-            if (currentPlayerIndex < playerList.size()) {
-                statusLabel.setText("Pass device to Player " + (currentPlayerIndex + 1));
-                buildTableRows(); 
-                return; 
-            }
-            hitButton.setEnabled(false); 
-            standButton.setEnabled(false);
-            dealer.runTurn(cardDeck);
-            buildTableRows(); 
-            statusLabel.setText("Round Over!"); 
-            
-            Timer endRoundTimer = new Timer (3000, new ActionListener() {
-            	@Override
-            	public void actionPerformed(ActionEvent e) {
-            		evaluateFinalWinners(); 
-            	}
-            });
-            endRoundTimer.setRepeats(false); 
-            endRoundTimer.start(); 
+        	currentPlayerIndex++; 
+        	if (currentPlayerIndex < playerList.size()) {
+        		statusLabel.setText("Pass device to Player " + (currentPlayerIndex + 1)); 
+        		
+        		hitButton.setEnabled(true);
+        		standButton.setEnabled(true); 
+        		buildTableRows(); 
+        		return; 
+        	}
+        	executeDealerPhase(); 
         }
+    }
+    private void processNextAiTurn (final int aiIndex) {
+    	if (aiIndex >= aiList.size()) {
+    		executeDealerPhase(); 
+    		return; 
+    	}
+    	
+    	Computer currentAi = aiList.get(aiIndex); 
+    	String aiName = "AI Bot " + (aiIndex +2);
+    	statusLabel.setText(aiName + " is thinking...");
+    	
+    	Timer aiDelayTimer = new Timer (1500, new ActionListener() {
+    		@Override
+    		public void actionPerformed(ActionEvent e) {
+    			currentAi.run();
+    			if (currentAi.isFiveCardCharlie()) {
+    				statusLabel.setText(aiName + " achieved a 5-Card Charlie!");
+    			} else if (currentAi.isBusted()) {
+    				statusLabel.setText(aiName + " busted!"); 
+    			} else {
+    				statusLabel.setText(aiName + " stands."); 
+    			}
+    			buildTableRows(); 
+    			
+    			processNextAiTurn(aiIndex + 1); 
+    		}
+    	});
+    	aiDelayTimer.setRepeats(false); 
+    	aiDelayTimer.start();
+    }
+    
+    private void executeDealerPhase() {
+    	statusLabel.setText("Dealer's Turn....");
+    	buildTableRows(); 
+    	
+    	Timer dealerActionTimer = new Timer (1800, new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				dealer.runTurn(cardDeck);
+				buildTableRows(); 
+				statusLabel.setText("Round Over! Calculating final winners...");
+				
+				Timer endRoundTimer = new Timer (3000, new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						evaluateFinalWinners(); 
+					}
+				});
+				endRoundTimer.setRepeats(false); 
+				endRoundTimer.start();
+			}
+    	});
+    	dealerActionTimer.setRepeats(false);
+    	dealerActionTimer.start();
     }
 
     private void evaluateFinalWinners() {
     	String bannerResultsText = FinalBoardPrint.showSummary(frame, dealer, playerList, aiList, gameMode, this); 
     	statusLabel.setText(bannerResultsText); 
     } 
-
-    private void styleActionButton(JButton button, Color bg) {
-        button.setPreferredSize(new Dimension(120, 40)); 
-        button.setBackground(bg); 
-        button.setForeground(Color.WHITE); 
-        button.setFont(new Font("Times New Roman", Font.BOLD, 14)); 
-        button.setFocusPainted(false); 
-        button.setBorderPainted(false); 
-        button.setOpaque(true); 
-    }
     
     public void restartMatch() {
         System.out.println("Resetting table for next round...."); 
@@ -438,14 +464,14 @@ public class GameWindow {
     	 statusLabel.setText("Dealing cards face down...");
      	buildTableRows(); 
      	
-     	Timer timer = new Timer(1500, new ActionListener() { // 1.5 seconds delay
+     	Timer timer = new Timer(1500, new ActionListener() { 
      		@Override 
      		public void actionPerformed(ActionEvent e) {
      			cardsRevealed = true; 
      			hitButton.setEnabled(true); 
      			standButton.setEnabled(true);
                  statusLabel.setText("Your Turn! Use the control panel buttons below.");
-                 buildTableRows(); // --- FIXED: Added repaint trigger to visually flip the cards up
+                 buildTableRows(); 
      		}
      	});
      	timer.setRepeats(false); 

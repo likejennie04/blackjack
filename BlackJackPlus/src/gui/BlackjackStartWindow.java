@@ -30,11 +30,11 @@ public class BlackjackStartWindow {
         title.setForeground(Color.PINK); 
         
         //button
-        JButton offlineButton = new JButton("Offline");
-        JButton onlineButton = new JButton("Online");
-        JButton rulesButton = new JButton("Rules");
-        JButton settingButton = new JButton("Settings"); 
-        JButton exitButton = new JButton("Exit"); 
+        JButton offlineButton = new JButton("OFFLINE");
+        JButton onlineButton = new JButton("OFFLINE");
+        JButton rulesButton = new JButton("RULES");
+        JButton settingButton = new JButton("SETTINGS"); 
+        JButton exitButton = new JButton("EXIT"); 
         
         JButton[] buttons = {offlineButton, onlineButton, rulesButton, settingButton, exitButton};
         Dimension buttonSize = new Dimension(200, 50);
@@ -74,7 +74,6 @@ public class BlackjackStartWindow {
             public void actionPerformed(ActionEvent e) {
                 System.out.println("Debug: Opening Rules Window...");
                 new RulesWindow(); 
-                // Usually we don't dispose frame here so user can go back
             }
         });
         

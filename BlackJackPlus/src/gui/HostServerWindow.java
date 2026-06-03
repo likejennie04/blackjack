@@ -77,6 +77,7 @@ public class HostServerWindow {
             if (hostName == null || hostName.trim().isEmpty()) hostName = "Host_Player";
             final String finalName = hostName;
 
+            final String finalIP = backend.BlackjackServer.getSystemIP();
             // Start server in background thread
             new Thread(() -> {
                 try {
@@ -96,8 +97,15 @@ public class HostServerWindow {
                 
                 startServerButton.setEnabled(false); 
                 startServerButton.setText("Server Running as: " + finalName);
-                statusInfoLabel.setText("Server Online! Wait for players to join...");
-                startGameButton.setEnabled(true); 
+                
+                //display IP address 
+             // --- PRETTIER FORMATTED IP LABEL ---
+                statusInfoLabel.setText(
+                    "<html><div style='text-align: center; font-family: sans-serif; font-size: 13px; color: #D3D3D3;'>" +
+                    "Server Status: <span style='color: #4CAF50; font-weight: bold;'>ONLINE</span><br><br>" +
+                    "Join IP: <span style='color: #FFD700; font-weight: bold; font-size: 16px; font-family: monospace;'>" + finalIP + "</span>" +
+                    "</div></html>"
+                );                startGameButton.setEnabled(true); 
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(frame, "Error: " + ex.getMessage());
             }

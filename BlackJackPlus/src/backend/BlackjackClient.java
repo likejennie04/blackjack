@@ -21,7 +21,6 @@ public class BlackjackClient {
     public void setPlayerName(String name) {
         if (name != null && !name.trim().isEmpty()) {
             this.playerName = name.trim();
-            // If already connected, immediately sync name update to server
             if (out != null) {
                 sendMove("NAME_REGISTER:" + this.playerName);
             }
@@ -40,7 +39,6 @@ public class BlackjackClient {
             this.out = new PrintWriter(socket.getOutputStream(), true);
             this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-            // Auto-register initial identity tags upon established handshake connection
             sendMove("NAME_REGISTER:" + this.playerName);
             sendMove("AVATAR_UPDATE:" + this.avatarId);
 
@@ -52,7 +50,6 @@ public class BlackjackClient {
 
     public void setAvatarId(int id) {
         this.avatarId = id;
-        // If already connected, immediately sync avatar update to server
         if (out != null) {
             sendMove("AVATAR_UPDATE:" + this.avatarId);
         }

@@ -10,7 +10,7 @@ public class SettingWindow {
     public SettingWindow() {
        
         final JFrame frame = new JFrame("Game Settings");
-        frame.setSize(400, 550); // Increased slightly to prevent component crowding
+        frame.setSize(400, 550); 
         frame.setLocationRelativeTo(null);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 

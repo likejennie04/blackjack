@@ -48,4 +48,15 @@ public class Hand {
     public void clearHand() {
     	this.handCards.clear(); 
     }
+    
+    public boolean isFiveCardCharlie() {
+    	return this.getHandStrings().length >= 5; 
+    }
+    
+    public boolean isBusted() {
+    	if (isFiveCardCharlie()) {
+    		return false;
+    	}
+    	return this.getScore() > 21; 
+    }
 }

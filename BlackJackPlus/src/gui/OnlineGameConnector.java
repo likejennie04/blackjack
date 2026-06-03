@@ -6,8 +6,8 @@ import java.awt.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList; // Added missing import
-import java.util.List;      // Added missing import
+import java.util.ArrayList; 
+import java.util.List;      
 
 public class OnlineGameConnector {
     private JFrame frame;
@@ -21,7 +21,6 @@ public class OnlineGameConnector {
     private JButton standButton;
     private JButton returnButton;
 
-    // 👑 Tracking the current active turn's player name locally
     private String currentTurnPlayerName = "Waiting..."; 
 
     public OnlineGameConnector(BlackjackClient client) {
@@ -132,7 +131,6 @@ public class OnlineGameConnector {
     private void updateVisualRoster(String rawRosterData) {
         rosterPanel.removeAll();
 
-        // 1. Render the Dealer Block
         JPanel dealerBlock = new JPanel(new BorderLayout());
         dealerBlock.setOpaque(false);
         JLabel dealerAvatar = new JLabel();
@@ -146,7 +144,6 @@ public class OnlineGameConnector {
         dealerBlock.add(dealerAvatar, BorderLayout.CENTER);
         dealerBlock.add(dealerNameLabel, BorderLayout.SOUTH);
 
-        // 👑 HIGHLIGHT: Check if it's the Dealer's Turn
         if ("Dealer (House)".equals(currentTurnPlayerName)) {
             dealerNameLabel.setForeground(Color.YELLOW);
             dealerNameLabel.setText("Dealer ★ Active");
@@ -157,7 +154,6 @@ public class OnlineGameConnector {
         }
         rosterPanel.add(dealerBlock);
 
-        // 2. Render all Connected Players
         if (rawRosterData != null && !rawRosterData.isEmpty()) {
             String[] participants = rawRosterData.split(";");
             for (String part : participants) {
@@ -188,13 +184,11 @@ public class OnlineGameConnector {
                     pNameLabel.setForeground(Color.WHITE);
                 }
 
-                // 👑 HIGHLIGHT: Check if it's this specific player's turn
                 if (name.equals(currentTurnPlayerName)) {
                     pNameLabel.setText(pNameLabel.getText() + " ➔ Turn");
                     pNameLabel.setFont(new Font("Times New Roman", Font.BOLD, 12));
                     pBlock.setBorder(BorderFactory.createLineBorder(new Color(255, 215, 0), 3, true)); 
                     
-                    // Local Button Control: Toggle accessibility if it belongs to this instance
                     if (name.equals(client.getPlayerName())) {
                         hitButton.setEnabled(true);
                         standButton.setEnabled(true);
@@ -220,6 +214,10 @@ public class OnlineGameConnector {
         rosterPanel.revalidate();
         rosterPanel.repaint();
     }
+    
+    /* 
+     * CARD GUI
+     */
 
     private URL getCardImageURL(String cardCode) {
         cardCode = cardCode.trim().toLowerCase().replace("[", "").replace("]", "");
@@ -247,8 +245,30 @@ public class OnlineGameConnector {
             case 's': suitName = "spades"; break;
             default:  suitName = "unknown"; break;
         }
-        // Fixed: Adjusted folder routing pattern match to target /Cards/ subpath perfectly
         return getClass().getResource("/image/" + valueName + "_of_" + suitName + ".png"); 
+    }
+
+    private void displayCard(JPanel panel, String cardCode) {
+        URL imgURL = getCardImageURL(cardCode);
+        
+        if (imgURL != null) {
+            ImageIcon icon = new ImageIcon(imgURL);
+            
+            JPanel cardShell = new JPanel(new BorderLayout());
+            cardShell.setPreferredSize(new Dimension(75, 105));
+            cardShell.setBackground(Color.WHITE);
+            cardShell.setBorder(BorderFactory.createLineBorder(new Color(40, 40, 40), 1, true));
+            
+            Image scaled = icon.getImage().getScaledInstance(65, 95, Image.SCALE_SMOOTH);
+            JLabel cardLabel = new JLabel(new ImageIcon(scaled));
+            
+            cardShell.add(cardLabel, BorderLayout.CENTER);
+            panel.add(cardShell);
+        } else {
+            JLabel errorLabel = new JLabel("[" + cardCode + "]");
+            errorLabel.setForeground(Color.YELLOW);
+            panel.add(errorLabel);
+        }
     }
 
     private void processServerMessage(String message) {
@@ -301,29 +321,6 @@ public class OnlineGameConnector {
             statusLabel.setText("<html><font color='yellow'>" + message + "</font></html>");
             hitButton.setEnabled(false);
             standButton.setEnabled(false);
-        }
-    }
-
-    private void displayCard(JPanel panel, String cardCode) {
-        URL imgURL = getCardImageURL(cardCode);
-        
-        if (imgURL != null) {
-            ImageIcon icon = new ImageIcon(imgURL);
-            
-            JPanel cardShell = new JPanel(new BorderLayout());
-            cardShell.setPreferredSize(new Dimension(75, 105));
-            cardShell.setBackground(Color.WHITE);
-            cardShell.setBorder(BorderFactory.createLineBorder(new Color(40, 40, 40), 1, true));
-            
-            Image scaled = icon.getImage().getScaledInstance(65, 95, Image.SCALE_SMOOTH);
-            JLabel cardLabel = new JLabel(new ImageIcon(scaled));
-            
-            cardShell.add(cardLabel, BorderLayout.CENTER);
-            panel.add(cardShell);
-        } else {
-            JLabel errorLabel = new JLabel("[" + cardCode + "]");
-            errorLabel.setForeground(Color.YELLOW);
-            panel.add(errorLabel);
         }
     }
 }
