@@ -148,10 +148,24 @@ public class BlackjackServer {
             
             sendRosterSync();
             
+            
             if (!turnOrderList.isEmpty()) {
-                RemotePlayerData firstPlayer = table.get(turnOrderList.get(0));
+                PrintWriter firstClient = turnOrderList.get(0);
+                RemotePlayerData firstPlayer = table.get(firstClient);
+                
+               
                 broadcast("CURRENT_TURN:" + firstPlayer.player.getName());
+                
+                
+                for (PrintWriter writer : table.keySet()) {
+                    if (writer == firstClient) {
+                        writer.println("[Arena]: UNLOCK_ACTIONS_FOR_CLIENT");
+                    } else {
+                        writer.println("[Arena]: LOCK_ACTIONS_FOR_CLIENT");
+                    }
+                }
             }
+            System.out.println("Game started safely with synchronized atomic tokens.");
         }
 
         private void handleHitAction() {
@@ -204,14 +218,28 @@ public class BlackjackServer {
             RemotePlayerData nextData = table.get(nextClient);
             if (nextData != null && nextData.player.getName() != null) {
                 broadcast("CURRENT_TURN:" + nextData.player.getName());
+                
+               
+                for (PrintWriter writer : table.keySet()) {
+                    if (writer == nextClient) {
+                        writer.println("[Arena]: UNLOCK_ACTIONS_FOR_CLIENT");
+                    } else {
+                        writer.println("[Arena]: LOCK_ACTIONS_FOR_CLIENT");
+                    }
+                }
             } else {
                 advanceTurn(); 
             }
         } else {
             isGameActive = false; 
-            broadcast("CURRENT_TURN:Dealer (House)");
+            broadcast("CURRENT_TURN:Dealer");
             broadcast("Dealer is playing out their hand...");
             
+           
+            for (PrintWriter writer : table.keySet()) {
+                writer.println("[Arena]: LOCK_ACTIONS_FOR_CLIENT");
+            }
+
             StringBuilder sb = new StringBuilder("DEALER_INFO: ");
             for(Card card : dealerHand) {
                 sb.append(card).append(", ");
@@ -232,6 +260,15 @@ public class BlackjackServer {
         RemotePlayerData data = table.get(currentActiveClient);
         if (data != null) {
             broadcast("CURRENT_TURN:" + data.player.getName());
+            
+          
+            for (PrintWriter writer : table.keySet()) {
+                if (writer == currentActiveClient) {
+                    writer.println("[Arena]: UNLOCK_ACTIONS_FOR_CLIENT");
+                } else {
+                    writer.println("[Arena]: LOCK_ACTIONS_FOR_CLIENT");
+                }
+            }
         } else {
             advanceTurn();
         }
