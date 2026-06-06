@@ -9,7 +9,8 @@ import java.net.URL;
 
 /**
  * Re-engineered OnlineGameConnector.
- * Fully features localized option layout and synchronized Avatar resources.
+ * Acts exactly like the offline GameWindow by rendering multi-row table snapshots
+ * and passing control downstream to your customized FinalBoardPrint layout.
  */
 public class OnlineGameConnector {
     private JFrame frame;
@@ -27,7 +28,7 @@ public class OnlineGameConnector {
     public OnlineGameConnector(BlackjackClient client) {
         this.client = client;
         
-        // 🎯 修复点：移除了报错的 dispose() 链，改用反射强行预装载 AvatarManager
+        // Use clean reflection block to safely warm up AvatarManager resources safely
         try {
             if (AvatarManager.getAllAvatars().isEmpty()) {
                 Class.forName("gui.AvatarManager");
@@ -288,8 +289,12 @@ public class OnlineGameConnector {
         System.out.println("[Server Data]: " + message);
 
         if (message.contains("TABLE_SNAPSHOT:")) {
-            tablePanel.removeAll();
             String snapshotData = message.substring(message.indexOf("TABLE_SNAPSHOT:") + 15).trim();
+            
+        
+            tablePanel.putClientProperty("latest_snapshot_raw", snapshotData);
+
+            tablePanel.removeAll();
             String[] rows = snapshotData.split(";");
             for (String row : rows) {
                 if (row.trim().isEmpty()) continue;
@@ -328,37 +333,21 @@ public class OnlineGameConnector {
             if (cachedData != null) updateVisualRoster(cachedData);
         }
         
+       
         if (message.contains("GAME_OVER_SUMMARY:") || message.contains("SHOW_FINAL_SUMMARY:")) {
             hitButton.setEnabled(false);
             standButton.setEnabled(false);
             
-            String summaryText = message.replace("[Arena]:", "")
-                                        .replace("GAME_OVER_SUMMARY:", "")
-                                        .replace("SHOW_FINAL_SUMMARY:", "")
-                                        .trim();
-            
-            String htmlSummary = "<html><font size='4' face='Times New Roman' color='black'>" 
-                               + summaryText.replace("|", "<br>") + "</font></html>";
-            
-            String[] options = {"Restart Match", "Return to Menu"};
-            
-            int choice = JOptionPane.showOptionDialog(
-                    frame, 
-                    htmlSummary, 
-                    "♣️ BLACKJACK+ ARENA SUMMARY ♣️", 
-                    JOptionPane.YES_NO_OPTION, 
-                    JOptionPane.INFORMATION_MESSAGE, 
-                    null, 
-                    options, 
-                    options[0]
-            );
-            
-            if (choice == JOptionPane.YES_OPTION) {
-                System.out.println("[Action]: Triggering multiplayer session recycle...");
-                client.sendMove("START_COMMAND"); 
-            } else {
-                executeQuitSequence();
+            String cachedSnapshot = (String) tablePanel.getClientProperty("latest_snapshot_raw");
+            if (cachedSnapshot == null) {
+                cachedSnapshot = "Dealer=10s,8c;YourName=Kc,Ah"; // fallback mockup
             }
+            
+            final String snapshotToSend = cachedSnapshot;
+            SwingUtilities.invokeLater(() -> {
+               
+                FinalBoardPrint.showOnlineSummary(frame, snapshotToSend, client, this);
+            });
         }
     }
 }
