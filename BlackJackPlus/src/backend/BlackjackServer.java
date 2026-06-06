@@ -20,7 +20,6 @@ public class BlackjackServer {
         sharedDeck.shuffle();
         
         try (ServerSocket serverSocket = new ServerSocket(8888)) {
-            // 🎯 UX Improvement: Print the actual LAN IP on startup so you know what to type
             System.out.println("Blackjack Arena started successfully!");
             System.out.println("👉 Tell your friends to connect to IP: " + getSystemIP() + " on port 8888\n");
 
@@ -29,8 +28,7 @@ public class BlackjackServer {
                 new Thread(new ClientHandler(socket)).start();
             }
         } catch (BindException e) {
-            System.err.println("\n⚠️ [SERVER ERROR]: Port 8888 is already bound by a ghost process!");
-            System.err.println("👉 FIX: Close your previously running game window or hit 'Stop/Terminate' in your IDE console.\n");
+            System.err.println("\n⚠️ [SERVER ERROR]: Port 8888 is already bound!");
         } catch (IOException e) {
             System.err.println("General I/O Exception starting the server: " + e.getMessage());
         }
@@ -71,7 +69,6 @@ public class BlackjackServer {
                     if (input.startsWith("NAME_REGISTER:")) {
                         String name = input.substring(14).trim();
                         data.player.setName(name);
-                        System.out.println("Player registered: " + name);
                         broadcast(name + " has joined the table.");
                         sendRosterSync();
                         continue;
@@ -108,16 +105,12 @@ public class BlackjackServer {
                     turnOrderList.remove(out);
                 }
                 sendRosterSync();
-                
-                // Safe turn advancing when a player leaves middle-game
                 if (isGameActive && !turnOrderList.isEmpty()) {
                     checkAndAdvanceTurnOnDisconnect();
                 }
                 try { socket.close(); } catch (IOException e) { e.printStackTrace(); }
             }
         }
-
-        // --- ENCAPSULATED REFACTORED ACTIONS ---
 
         private void handleStartGame() {
             if (table.isEmpty()) {
@@ -148,8 +141,6 @@ public class BlackjackServer {
                 p.addCard(c2);
                 
                 writer.println("[Arena]: GAME_STARTED");
-                
-               
                 writer.println("[Arena]: PLAYER_CARDS: " + c1 + ", " + c2);
                 
                 turnOrderList.add(writer);
@@ -161,7 +152,6 @@ public class BlackjackServer {
                 RemotePlayerData firstPlayer = table.get(turnOrderList.get(0));
                 broadcast("CURRENT_TURN:" + firstPlayer.player.getName());
             }
-            System.out.println("Game started safely across all active client handles.");
         }
 
         private void handleHitAction() {
@@ -222,7 +212,6 @@ public class BlackjackServer {
             broadcast("CURRENT_TURN:Dealer (House)");
             broadcast("Dealer is playing out their hand...");
             
-            // 🎯 扩展点：当所有人都 Stand 后，服务器在这里把庄家剩下的牌翻开
             StringBuilder sb = new StringBuilder("DEALER_INFO: ");
             for(Card card : dealerHand) {
                 sb.append(card).append(", ");
@@ -232,15 +221,13 @@ public class BlackjackServer {
     }
 
     private static void checkAndAdvanceTurnOnDisconnect() {
-        // 🎯 核心修复：防止当前活跃玩家退出导致的 turnOrderList 索引越界
         if (currentTurnIndex >= turnOrderList.size()) {
-            currentTurnIndex = 0; // 重置索引安全归零
+            currentTurnIndex = 0; 
             if (turnOrderList.isEmpty()) {
                 isGameActive = false;
                 return;
             }
         }
-        
         PrintWriter currentActiveClient = turnOrderList.get(currentTurnIndex);
         RemotePlayerData data = table.get(currentActiveClient);
         if (data != null) {
@@ -262,7 +249,6 @@ public class BlackjackServer {
 
     private static void broadcast(String message) {
         for (PrintWriter writer : table.keySet()) {
-            // 确保发送的报文带有统一的联机标识前缀
             if (!message.startsWith("[Arena]:")) {
                 writer.println("[Arena]: " + message);
             } else {
