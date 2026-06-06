@@ -117,7 +117,9 @@ public class OnlineGameConnector {
         frame.setVisible(true);
     }
 
-    
+    /**
+     * Spawns a background thread to consistently read messages from the server socket.
+     */
     private void startServerListener() {
         new Thread(() -> {
             try {
@@ -138,7 +140,7 @@ public class OnlineGameConnector {
         }).start();
     }
 
-   
+    
     private void updateVisualRoster(String rawRosterData) {
         rosterPanel.removeAll();
 
@@ -200,7 +202,7 @@ public class OnlineGameConnector {
                 }
 
                 // Visual highlight if this player is currently making a move
-                if (name.equalsIgnoreCase(currentTurnPlayerName)) {
+                if (name.equals(currentTurnPlayerName)) {
                     pNameLabel.setText(pNameLabel.getText() + " ➔ Turn");
                     pNameLabel.setFont(new Font("Times New Roman", Font.BOLD, 12));
                     pBlock.setBorder(BorderFactory.createLineBorder(new Color(255, 215, 0), 3, true)); // Gold active frame
@@ -254,7 +256,7 @@ public class OnlineGameConnector {
         return getClass().getResource("/image/" + valueName + "_of_" + suitName + ".png"); 
     }
 
-    
+   
     private void displayCard(JPanel panel, String cardCode) {
         URL imgURL = getCardImageURL(cardCode);
         
@@ -280,78 +282,76 @@ public class OnlineGameConnector {
         }
     }
 
-    
+   
     private void processServerMessage(String message) {
         System.out.println("[Server Data]: " + message);
 
-        // --- Turn Manager Control Packet ---
+        // 1. Update Turn Tracker (Extract cleanly using sub-matching)
         if (message.contains("CURRENT_TURN:")) {
-            // Extract the active user and apply heavy trimming to remove any hidden white spaces or newlines
-            String activeUser = message.substring(message.indexOf("CURRENT_TURN:") + 13).trim().replaceAll("\\s+", "");
+            String activeUser = message.substring(message.indexOf("CURRENT_TURN:") + 13).trim();
+            // Clear any lingering packet trailing symbols if your protocol uses semicolons
+            if (activeUser.contains(";")) {
+                activeUser = activeUser.split(";")[0].trim();
+            }
             this.currentTurnPlayerName = activeUser;
             
-            // Refresh top panel to shift active gold boundaries to current player
             String cachedData = (String) rosterPanel.getClientProperty("raw_cache");
             updateVisualRoster(cachedData);
-            
-            // Format local player name for a foolproof strict comparison
-            String localPlayerName = client.getPlayerName().trim().replaceAll("\\s+", "");
-            
-            // Debug prints to console so you can see exactly what Java is comparing
-            System.out.println("--- Turn Debug ---");
-            System.out.println("Active User from Server: [" + activeUser + "]");
-            System.out.println("Local Player Name Local: [" + localPlayerName + "]");
-            
-            // Strict action controls: Only enable interaction buttons if it matches your own name
-            if (activeUser.equalsIgnoreCase(localPlayerName)) {
-                statusLabel.setText("★ Your Turn! Make your move. ★");
-                hitButton.setEnabled(true);
-                standButton.setEnabled(true);
-                System.out.println("✅ Match Successful! Buttons enabled for this client.");
-            } else {
-                statusLabel.setText("Waiting for " + activeUser + " to complete their turn...");
-            }
         }
 
-        // --- Roster Metadata Refresh Packet ---
+        // 2. Process Roster Updates
         if (message.contains("ROSTER_UPDATE:")) {
             String data = message.substring(message.indexOf("ROSTER_UPDATE:") + 14).trim();
             updateVisualRoster(data);
         }
         
-        // --- Game Setup Clear Flags ---
-        else if (message.contains("GAME_STARTED")) {
+        // 3. Clear Canvas on Game Start
+        if (message.contains("GAME_STARTED")) {
             statusLabel.setText("Game Started! Good Luck!");
             playerCardPanel.removeAll();
             dealerCardPanel.removeAll();
         } 
         
-        // --- Dealer Card Visual Rendering Stream ---
-        else if (message.contains("DEALER_INFO:")) {
+        // 4. Render Hand Layouts
+        if (message.contains("DEALER_INFO:")) {
             dealerCardPanel.removeAll();
-            String content = message.replace("[Arena]:", "").replace("DEALER_INFO:", "").trim();
+            String content = message.substring(message.indexOf("DEALER_INFO:") + 12).trim();
             String[] cards = content.split(",");
             for (String card : cards) {
-                displayCard(dealerCardPanel, card.trim());
+                if (!card.trim().isEmpty()) displayCard(dealerCardPanel, card.trim());
             }
             dealerCardPanel.revalidate();
             dealerCardPanel.repaint();
         }
         
-        // --- Local Player Card Visual Rendering Stream ---
-        else if (message.contains("PLAYER_CARDS:") || message.contains("hit:")) {
+        if (message.contains("PLAYER_CARDS:") || message.contains("hit:")) {
             playerCardPanel.removeAll(); 
-            String content = message.replace("[Arena]:", "").replace("PLAYER_CARDS:", "").trim();
+            String targetKey = message.contains("PLAYER_CARDS:") ? "PLAYER_CARDS:" : "hit:";
+            String content = message.substring(message.indexOf(targetKey) + targetKey.length()).trim();
             String[] cards = content.split(",");
             for (String card : cards) {
-                displayCard(playerCardPanel, card.trim());
+                if (!card.trim().isEmpty()) displayCard(playerCardPanel, card.trim());
             }
             playerCardPanel.revalidate();
             playerCardPanel.repaint();
         }
         
-        // --- Match Terminal State Evaluations ---
-        else if (message.contains("Bust") || message.contains("wins") || message.contains("Congratulations")) {
+        // ==========================================
+        // FIXED TURN LOCK ENFORCEMENT
+        // ==========================================
+        // Run this state validation check explicitly on *every* single packet read
+        if (this.currentTurnPlayerName.equals(client.getPlayerName())) {
+            statusLabel.setText("★ Your Turn! Make your move. ★");
+            hitButton.setEnabled(true);
+            standButton.setEnabled(true);
+        } else {
+            statusLabel.setText("Waiting for " + this.currentTurnPlayerName + " to complete their turn...");
+            hitButton.setEnabled(false);
+            standButton.setEnabled(false);
+        }
+
+        // 5. Override if game hits a terminal evaluation state
+        if (message.contains("Bust") || message.contains("wins") || message.contains("Congratulations")) {
             statusLabel.setText("<html><font color='yellow'>" + message + "</font></html>");
             hitButton.setEnabled(false);
             standButton.setEnabled(false);
