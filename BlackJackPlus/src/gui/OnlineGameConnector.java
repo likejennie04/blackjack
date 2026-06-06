@@ -117,9 +117,7 @@ public class OnlineGameConnector {
         frame.setVisible(true);
     }
 
-    /**
-     * Spawns a background thread to consistently read messages from the server socket.
-     */
+    
     private void startServerListener() {
         new Thread(() -> {
             try {
@@ -140,7 +138,7 @@ public class OnlineGameConnector {
         }).start();
     }
 
-    
+   
     private void updateVisualRoster(String rawRosterData) {
         rosterPanel.removeAll();
 
@@ -202,7 +200,7 @@ public class OnlineGameConnector {
                 }
 
                 // Visual highlight if this player is currently making a move
-                if (name.equals(currentTurnPlayerName)) {
+                if (name.equalsIgnoreCase(currentTurnPlayerName)) {
                     pNameLabel.setText(pNameLabel.getText() + " ➔ Turn");
                     pNameLabel.setFont(new Font("Times New Roman", Font.BOLD, 12));
                     pBlock.setBorder(BorderFactory.createLineBorder(new Color(255, 215, 0), 3, true)); // Gold active frame
@@ -256,7 +254,7 @@ public class OnlineGameConnector {
         return getClass().getResource("/image/" + valueName + "_of_" + suitName + ".png"); 
     }
 
-   
+    
     private void displayCard(JPanel panel, String cardCode) {
         URL imgURL = getCardImageURL(cardCode);
         
@@ -282,28 +280,39 @@ public class OnlineGameConnector {
         }
     }
 
-   
+    
     private void processServerMessage(String message) {
         System.out.println("[Server Data]: " + message);
 
         // --- Turn Manager Control Packet ---
         if (message.contains("CURRENT_TURN:")) {
-            String activeUser = message.substring(message.indexOf("CURRENT_TURN:") + 13).trim();
+            // Extract the active user and apply heavy trimming to remove any hidden white spaces or newlines
+            String activeUser = message.substring(message.indexOf("CURRENT_TURN:") + 13).trim().replaceAll("\\s+", "");
             this.currentTurnPlayerName = activeUser;
             
             // Refresh top panel to shift active gold boundaries to current player
             String cachedData = (String) rosterPanel.getClientProperty("raw_cache");
             updateVisualRoster(cachedData);
             
+            // Format local player name for a foolproof strict comparison
+            String localPlayerName = client.getPlayerName().trim().replaceAll("\\s+", "");
+            
+            // Debug prints to console so you can see exactly what Java is comparing
+            System.out.println("--- Turn Debug ---");
+            System.out.println("Active User from Server: [" + activeUser + "]");
+            System.out.println("Local Player Name Local: [" + localPlayerName + "]");
+            
             // Strict action controls: Only enable interaction buttons if it matches your own name
-            if (activeUser.equals(client.getPlayerName())) {
+            if (activeUser.equalsIgnoreCase(localPlayerName)) {
                 statusLabel.setText("★ Your Turn! Make your move. ★");
                 hitButton.setEnabled(true);
                 standButton.setEnabled(true);
+                System.out.println("✅ Match Successful! Buttons enabled for this client.");
             } else {
                 statusLabel.setText("Waiting for " + activeUser + " to complete their turn...");
                 hitButton.setEnabled(false);
                 standButton.setEnabled(false);
+                System.out.println("❌ Match Failed. Buttons disabled for this client.");
             }
         }
 
