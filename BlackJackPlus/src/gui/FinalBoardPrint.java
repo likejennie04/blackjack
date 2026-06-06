@@ -207,7 +207,7 @@ public class FinalBoardPrint {
             String rankPart = cardCode.substring(0, cardCode.length() - 1);
             char suitPart = cardCode.charAt(cardCode.length() - 1);
 
-            // 1. 翻译点数映射 (根据通用 0=A, 1=2 ... 12=K 规范映射)
+           
             int rank;
             switch (rankPart) {
                 case "a":  rank = 0; break;
@@ -215,11 +215,11 @@ public class FinalBoardPrint {
                 case "q":  rank = 11; break;
                 case "k":  rank = 12; break;
                 default:
-                    rank = Integer.parseInt(rankPart) - 1; // "2" 变成 1，"10" 变成 9
+                    rank = Integer.parseInt(rankPart) - 1; 
                     break;
             }
 
-            // 2. 翻译花色映射 (根据通用 0=梅花/方块 等基础规范安全翻译)
+            
             int suit;
             switch (suitPart) {
                 case 's': suit = 0; break; // Spades
@@ -229,10 +229,10 @@ public class FinalBoardPrint {
                 default:  suit = 0; break;
             }
 
-            return new Card(rank, suit); // 完美对接原生的两个 int 构造器！
+            return new Card(rank, suit); 
         } catch (Exception e) {
             System.err.println("Failed to parse remote token: " + cardCode);
-            return new Card(0, 0); // 发生意外时的安全防护降级
+            return new Card(0, 0); 
         }
     }
 }
