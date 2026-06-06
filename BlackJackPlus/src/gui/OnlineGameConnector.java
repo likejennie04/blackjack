@@ -140,10 +140,7 @@ public class OnlineGameConnector {
         }).start();
     }
 
-    /**
-     * Parses the roster data string received from the server and renders avatars horizontally.
-     * Expected string format: "Player1,avatarId;Player2,avatarId;..."
-     */
+    
     private void updateVisualRoster(String rawRosterData) {
         rosterPanel.removeAll();
 
@@ -229,9 +226,7 @@ public class OnlineGameConnector {
         rosterPanel.repaint();
     }
 
-    /**
-     * Converts raw card tags (e.g., "9d", "As") into system resource file URLs.
-     */
+    
     private URL getCardImageURL(String cardCode) {
         cardCode = cardCode.trim().toLowerCase().replace("[", "").replace("]", "");
         if (cardCode.contains("hidden") || cardCode.isEmpty()) {
@@ -261,9 +256,7 @@ public class OnlineGameConnector {
         return getClass().getResource("/image/" + valueName + "_of_" + suitName + ".png"); 
     }
 
-    /**
-     * Generates a structural card wrapper with solid white background and drops the scaled PNG inside.
-     */
+   
     private void displayCard(JPanel panel, String cardCode) {
         URL imgURL = getCardImageURL(cardCode);
         
@@ -289,9 +282,7 @@ public class OnlineGameConnector {
         }
     }
 
-    /**
-     * Core Command Interpreter: Processes inputs received from backend network packet messages.
-     */
+   
     private void processServerMessage(String message) {
         System.out.println("[Server Data]: " + message);
 
