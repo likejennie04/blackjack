@@ -137,11 +137,9 @@ public class BlackjackServer {
                 p.addCard(sharedDeck.dealCard());
                 p.addCard(sharedDeck.dealCard());
                 
-               
                 writer.println("[Arena]: GAME_STARTED");
                 turnOrderList.add(writer);
             }
-            
             
             broadcastTableSnapshot();
             sendRosterSync();
@@ -166,8 +164,6 @@ public class BlackjackServer {
 
             Player p = data.player;
             p.addCard(sharedDeck.dealCard());
-            
-         
             broadcastTableSnapshot();
 
             if (p.isFiveCardCharlie() || p.isBusted()) {
@@ -203,7 +199,6 @@ public class BlackjackServer {
                 advanceTurn(); 
             }
         } else {
-           
             isGameActive = false; 
             broadcast("CURRENT_TURN:Dealer");
             
@@ -217,19 +212,13 @@ public class BlackjackServer {
                 dealerScore = calculateDealerScore();
             }
 
-           
             broadcastTableSnapshot();
-            
-           
             evaluateFinalResults(dealerScore);
         }
     }
 
-    
     private static void broadcastTableSnapshot() {
         StringBuilder sb = new StringBuilder("TABLE_SNAPSHOT:");
-        
-        // 1. Append Dealer Rows (If active game, hide first card)
         sb.append("Dealer (House)=");
         if (isGameActive && !dealerHand.isEmpty()) {
             sb.append("HIDDEN,");
@@ -241,11 +230,9 @@ public class BlackjackServer {
         }
         sb.append(";");
 
-        // 2. Append Active Remote Players Hand Assets
         for (RemotePlayerData pData : table.values()) {
             if (pData.player.getName() == null) continue;
             sb.append(pData.player.getName()).append("=");
-            // Filter card strings directly without text metrics suffix
             String rawHand = pData.player.toString(); 
             if(rawHand.contains("(")) rawHand = rawHand.substring(0, rawHand.indexOf("(")).trim();
             sb.append(rawHand).append(";");
@@ -266,7 +253,8 @@ public class BlackjackServer {
     }
 
     private static void evaluateFinalResults(int dealerScore) {
-        StringBuilder sb = new StringBuilder("SHOW_FINAL_SUMMARY: ");
+        // 🎯 统一发包前缀字眼，确保两端绝对对接
+        StringBuilder sb = new StringBuilder("GAME_OVER_SUMMARY: ");
         sb.append("■ HOUSE DEALER FINAL SCORE: ").append(dealerScore > 21 ? "Busted (Score 25)" : dealerScore).append(" | ");
         
         for (RemotePlayerData pData : table.values()) {
@@ -282,7 +270,7 @@ public class BlackjackServer {
                 pScore = 18;
             }
 
-            sb.append("• Player [").append(p.getName()).append("] Final Hand -> Status: ");
+            sb.append("• Player [").append(p.getName()).append("] Status: ");
             if (pScore > 21) sb.append("LOSE ❌ (Busted)");
             else if (p.isFiveCardCharlie()) sb.append("WIN 🏆 (5-Card Charlie!)");
             else if (dealerScore > 21) sb.append("WIN 🏆 (House Busted)");
