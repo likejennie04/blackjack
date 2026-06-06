@@ -18,7 +18,7 @@ public class FinalBoardPrint {
         StringBuilder dialogMessage = new StringBuilder();
         
         dialogMessage.append("=== THE END ===\n\n");
-        dialogMessage.append(String.format("Dealer (House) Score: %d -> %s\n", 
+        dialogMessage.append(String.format("Dealer (House) Score: %d %s\n", 
             dealerScore, (dealerScore > 21 ? "BUSTED (lose)" : "")));
         dialogMessage.append("--------------------------------------------------\n");
 

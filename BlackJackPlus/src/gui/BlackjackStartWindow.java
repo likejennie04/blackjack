@@ -31,7 +31,7 @@ public class BlackjackStartWindow {
         
         //button
         JButton offlineButton = new JButton("OFFLINE");
-        JButton onlineButton = new JButton("OFFLINE");
+        JButton onlineButton = new JButton("ONLINE");
         JButton rulesButton = new JButton("RULES");
         JButton settingButton = new JButton("SETTINGS"); 
         JButton exitButton = new JButton("EXIT"); 
