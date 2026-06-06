@@ -310,9 +310,6 @@ public class OnlineGameConnector {
                 System.out.println("✅ Match Successful! Buttons enabled for this client.");
             } else {
                 statusLabel.setText("Waiting for " + activeUser + " to complete their turn...");
-                hitButton.setEnabled(false);
-                standButton.setEnabled(false);
-                System.out.println("❌ Match Failed. Buttons disabled for this client.");
             }
         }
 
