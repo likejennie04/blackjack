@@ -8,19 +8,21 @@ import java.io.IOException;
 import java.net.URL;
 
 /**
- * Re-engineered OnlineGameConnector.
- * Acts exactly like the offline GameWindow by rendering multi-row table snapshots
- * and passing control downstream to your customized FinalBoardPrint layout.
+ * Re-engineered OnlineGameConnector with multi-row layout, 
+ * flawless identity mapping, and integrated settings theme callback hooks.
  */
 public class OnlineGameConnector {
     private JFrame frame;
     private BlackjackClient client;
 
+    // --- Core Containers ---
+    private JPanel mainPanel;
     private JLabel statusLabel;
     private JPanel tablePanel; 
     private JPanel rosterPanel; 
     private JButton hitButton;
     private JButton standButton;
+    private JButton settingButton; 
     private JButton returnButton;
 
     private String currentTurnPlayerName = "Waiting..."; 
@@ -28,7 +30,6 @@ public class OnlineGameConnector {
     public OnlineGameConnector(BlackjackClient client) {
         this.client = client;
         
-        // Use clean reflection block to safely warm up AvatarManager resources safely
         try {
             if (AvatarManager.getAllAvatars().isEmpty()) {
                 Class.forName("gui.AvatarManager");
@@ -38,18 +39,19 @@ public class OnlineGameConnector {
         initializeGUI();
         startServerListener();
         
-        // Synchronize initial visual request
         client.sendMove("REQUEST_SNAPSHOT");
     }
 
     private void initializeGUI() {
         frame = new JFrame("Blackjack+ Arena (Online Mode)");
-        frame.setSize(900, 700); 
+        frame.setSize(Config.windowWidth > 0 ? Config.windowWidth : 900, 
+                      Config.windowHeight > 0 ? Config.windowHeight : 700); 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLocationRelativeTo(null);
 
-        JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setBackground(new Color(20, 50, 30));
+        mainPanel = new JPanel(new BorderLayout());
+        // 🎯 融入设置：使用 Config.tableColor 动态指定当前赌场皮肤背景
+        mainPanel.setBackground(Config.tableColor != null ? Config.tableColor : new Color(20, 50, 30));
 
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.setOpaque(false);
@@ -69,7 +71,7 @@ public class OnlineGameConnector {
 
         tablePanel = new JPanel();
         tablePanel.setLayout(new BoxLayout(tablePanel, BoxLayout.Y_AXIS));
-        tablePanel.setBackground(new Color(20, 50, 30));
+        tablePanel.setBackground(Config.tableColor != null ? Config.tableColor : new Color(20, 50, 30));
         
         JScrollPane tableScroll = new JScrollPane(tablePanel);
         tableScroll.setBorder(null);
@@ -80,6 +82,7 @@ public class OnlineGameConnector {
 
         hitButton = new JButton("HIT");
         standButton = new JButton("STAND");
+        settingButton = new JButton("SETTINGS ⚙️"); // 🎯 联机设置入口
         returnButton = new JButton("RETURN");
 
         hitButton.setEnabled(false);
@@ -94,6 +97,13 @@ public class OnlineGameConnector {
             client.sendMove("stand");
         });
         
+    
+        settingButton.addActionListener(e -> {
+            SoundManager.buttonOne();
+           
+            new SettingWindow(); 
+        });
+
         returnButton.addActionListener(e -> {
             SoundManager.buttonOne();
             executeQuitSequence();
@@ -101,11 +111,30 @@ public class OnlineGameConnector {
 
         controlPanel.add(hitButton);
         controlPanel.add(standButton);
+        controlPanel.add(settingButton); // 塞入底端面板
         controlPanel.add(returnButton);
         mainPanel.add(controlPanel, BorderLayout.SOUTH);
 
         frame.add(mainPanel);
         frame.setVisible(true);
+    }
+
+   
+    public void updateTheme() {
+        if (mainPanel != null && tablePanel != null) {
+            mainPanel.setBackground(Config.tableColor);
+            tablePanel.setBackground(Config.tableColor);
+            mainPanel.revalidate();
+            mainPanel.repaint();
+        }
+    }
+
+    
+    public void applyResolution(int width, int height) {
+        if (frame != null) {
+            frame.setSize(width, height);
+            frame.setLocationRelativeTo(null);
+        }
     }
 
     private void startServerListener() {
@@ -130,7 +159,7 @@ public class OnlineGameConnector {
     private JPanel createPlayerRowPanel(String name, String[] cards) {
         JPanel row = new JPanel(new BorderLayout()); 
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 115));
-        row.setBackground(new Color(20, 50, 30)); 
+        row.setBackground(Config.tableColor != null ? Config.tableColor : new Color(20, 50, 30)); 
         row.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(255, 255, 255, 30), 1),
                 BorderFactory.createEmptyBorder(10, 15, 10, 15)
@@ -140,7 +169,17 @@ public class OnlineGameConnector {
         identityLabelPanel.setOpaque(false); 
         identityLabelPanel.setPreferredSize(new Dimension(150, 0)); 
         
-        JLabel nameTxT = new JLabel(name); 
+     
+        String displayName = name;
+        String cleanParam = name.trim().replaceAll("\\s+", "");
+        String cleanLocal = client.getPlayerName().trim().replaceAll("\\s+", "");
+        if (cleanParam.equalsIgnoreCase(cleanLocal) || (cleanParam.equals("1") && cleanLocal.equals("Anonymous"))) {
+            if (!displayName.contains("(You)")) {
+                displayName = displayName + " (You)";
+            }
+        }
+
+        JLabel nameTxT = new JLabel(displayName); 
         nameTxT.setFont(new Font("Times New Roman", Font.BOLD, 15)); 
         nameTxT.setForeground(Color.WHITE);
         identityLabelPanel.add(nameTxT);
@@ -257,7 +296,11 @@ public class OnlineGameConnector {
                 JLabel pNameLabel = new JLabel(name, JLabel.CENTER);
                 pNameLabel.setFont(new Font("Times New Roman", Font.PLAIN, 12));
                 
-                if (name.equalsIgnoreCase(client.getPlayerName().trim())) {
+                String cleanName = name.trim().replaceAll("\\s+", "");
+                String cleanLocalName = client.getPlayerName().trim().replaceAll("\\s+", "");
+
+               
+                if (cleanName.equalsIgnoreCase(cleanLocalName) || (cleanName.equals("1") && cleanLocalName.equals("Anonymous"))) {
                     pNameLabel.setText(name + " (You)");
                     pNameLabel.setForeground(Color.GREEN);
                 } else {
@@ -290,8 +333,6 @@ public class OnlineGameConnector {
 
         if (message.contains("TABLE_SNAPSHOT:")) {
             String snapshotData = message.substring(message.indexOf("TABLE_SNAPSHOT:") + 15).trim();
-            
-        
             tablePanel.putClientProperty("latest_snapshot_raw", snapshotData);
 
             tablePanel.removeAll();
@@ -333,19 +374,17 @@ public class OnlineGameConnector {
             if (cachedData != null) updateVisualRoster(cachedData);
         }
         
-       
         if (message.contains("GAME_OVER_SUMMARY:") || message.contains("SHOW_FINAL_SUMMARY:")) {
             hitButton.setEnabled(false);
             standButton.setEnabled(false);
             
             String cachedSnapshot = (String) tablePanel.getClientProperty("latest_snapshot_raw");
             if (cachedSnapshot == null) {
-                cachedSnapshot = "Dealer=10s,8c;YourName=Kc,Ah"; // fallback mockup
+                cachedSnapshot = "Dealer=10s,8c;YourName=Kc,Ah";
             }
             
             final String snapshotToSend = cachedSnapshot;
             SwingUtilities.invokeLater(() -> {
-               
                 FinalBoardPrint.showOnlineSummary(frame, snapshotToSend, client, this);
             });
         }

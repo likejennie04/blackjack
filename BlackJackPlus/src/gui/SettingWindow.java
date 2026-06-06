@@ -68,9 +68,13 @@ public class SettingWindow {
                     Config.tableColor = new Color(7, 54, 13);
                 }
                 panel.setBackground(Config.tableColor);
+                
+                
                 if (GameWindow.instance != null) {
                     GameWindow.instance.updateTheme();
                 }
+                
+                updateActiveOnlineConnectorTheme();
             }
         });
         
@@ -101,14 +105,14 @@ public class SettingWindow {
 
                 if (GameWindow.instance != null) {
                     GameWindow.instance.applyResolution(Config.windowWidth, Config.windowHeight);
-                } else {
-                    System.out.println("Resolution preset to " + Config.windowWidth + "x" + Config.windowHeight);
                 }
+                // 🎯 融入联机：让分辨率修改也能无缝自适应拉伸联机大盘！
+                updateActiveOnlineConnectorResolution();
             }
         });
         
-        JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER)); // Centered flow layout matches Box alignment
-        row.setOpaque(false); // Keeps the background color uniform
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER)); 
+        row.setOpaque(false); 
         
         JLabel numLabel = new JLabel("Number of Players (1-4): "); 
         numLabel.setForeground(Color.WHITE);
@@ -135,6 +139,7 @@ public class SettingWindow {
             if (GameWindow.instance != null) {
                 GameWindow.instance.updateTheme();
             }
+            updateActiveOnlineConnectorTheme();
             frame.dispose();
         });
 
@@ -174,5 +179,45 @@ public class SettingWindow {
 
         frame.add(panel);
         frame.setVisible(true);
+    }
+
+   
+    private void updateActiveOnlineConnectorTheme() {
+        for (Window w : Window.getWindows()) {
+            if (w instanceof JFrame && w.isVisible()) {
+                JFrame jf = (JFrame) w;
+                if (jf.getTitle().contains("Online Mode") || jf.getTitle().contains("Arena")) {
+                    jf.getContentPane().setBackground(Config.tableColor);
+                    // 动态查找组件内的 tablePanel 层重新变色
+                    SwingUtilities.invokeLater(() -> {
+                        for(Component comp : jf.getContentPane().getComponents()) {
+                            if(comp instanceof JPanel) {
+                                comp.setBackground(Config.tableColor);
+                                for(Component subComp : ((JPanel)comp).getComponents()) {
+                                    if(subComp instanceof JScrollPane) {
+                                        ((JScrollPane)subComp).getViewport().getView().setBackground(Config.tableColor);
+                                    }
+                                }
+                            }
+                        }
+                        w.validate();
+                        w.repaint();
+                    });
+                }
+            }
+        }
+    }
+
+    
+    private void updateActiveOnlineConnectorResolution() {
+        for (Window w : Window.getWindows()) {
+            if (w instanceof JFrame && w.isVisible()) {
+                JFrame jf = (JFrame) w;
+                if (jf.getTitle().contains("Online Mode") || jf.getTitle().contains("Arena")) {
+                    w.setSize(Config.windowWidth, Config.windowHeight);
+                    w.setLocationRelativeTo(null);
+                }
+            }
+        }
     }
 }
