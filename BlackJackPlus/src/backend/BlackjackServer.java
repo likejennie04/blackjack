@@ -232,9 +232,8 @@ public class BlackjackServer {
     }
 
     private static void checkAndAdvanceTurnOnDisconnect() {
-        // 🎯 核心修复：防止当前活跃玩家退出导致的 turnOrderList 索引越界
         if (currentTurnIndex >= turnOrderList.size()) {
-            currentTurnIndex = 0; // 重置索引安全归零
+            currentTurnIndex = 0; 
             if (turnOrderList.isEmpty()) {
                 isGameActive = false;
                 return;
@@ -262,7 +261,6 @@ public class BlackjackServer {
 
     private static void broadcast(String message) {
         for (PrintWriter writer : table.keySet()) {
-            // 确保发送的报文带有统一的联机标识前缀
             if (!message.startsWith("[Arena]:")) {
                 writer.println("[Arena]: " + message);
             } else {
