@@ -7,7 +7,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.URL;
 
-
+/**
+ * Fully stabilized OnlineGameConnector.
+ * Controls paths based strictly on unified server sequence triggers.
+ */
 public class OnlineGameConnector {
     private JFrame frame;
     private BlackjackClient client;
@@ -21,7 +24,6 @@ public class OnlineGameConnector {
     private JButton standButton;
     private JButton returnButton;
 
-    // Track the player whose turn is currently active
     private String currentTurnPlayerName = "Waiting..."; 
 
     public OnlineGameConnector(BlackjackClient client) {
@@ -29,7 +31,6 @@ public class OnlineGameConnector {
         initializeGUI();
         startServerListener();
         
-        // Notify the server about the selected avatar ID immediately upon connection
         client.sendMove("AVATAR_UPDATE:" + client.getAvatarId());
     }
 
@@ -40,9 +41,8 @@ public class OnlineGameConnector {
         frame.setLocationRelativeTo(null);
 
         JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setBackground(new Color(20, 50, 30)); // Classic casino green background
+        mainPanel.setBackground(new Color(20, 50, 30));
 
-        // --- Top Area: Status Display and Player Roster ---
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.setOpaque(false);
         
@@ -59,7 +59,6 @@ public class OnlineGameConnector {
         topPanel.add(rosterPanel, BorderLayout.CENTER);
         mainPanel.add(topPanel, BorderLayout.NORTH);
 
-        // --- Center Area: Card Game Table Splits (Dealer vs Player) ---
         JPanel tablePanel = new JPanel(new GridLayout(2, 1));
         tablePanel.setOpaque(false);
 
@@ -75,7 +74,6 @@ public class OnlineGameConnector {
         tablePanel.add(playerCardPanel);
         mainPanel.add(tablePanel, BorderLayout.CENTER);
 
-        // --- Bottom Area: Action Controls Buttons ---
         JPanel controlPanel = new JPanel();
         controlPanel.setOpaque(false);
 
@@ -83,7 +81,7 @@ public class OnlineGameConnector {
         standButton = new JButton("Stand");
         returnButton = new JButton("Return to Menu");
 
-        // Disabled by default until it is explicitly the player's turn
+        // Guarded components - locked until server grants access
         hitButton.setEnabled(false);
         standButton.setEnabled(false);
 
@@ -100,7 +98,7 @@ public class OnlineGameConnector {
             SoundManager.buttonOne();
             client.disconnect();
             frame.dispose();
-            new BlackjackStartWindow(); // Return to setup main menu
+            new BlackjackStartWindow(); 
         });
 
         controlPanel.add(hitButton);
@@ -109,10 +107,7 @@ public class OnlineGameConnector {
         mainPanel.add(controlPanel, BorderLayout.SOUTH);
 
         frame.add(mainPanel);
-        
-        // Initial draw of the player's own block before other peers connect
         updateVisualRoster(client.getPlayerName() + "," + client.getAvatarId());
-        
         frame.setVisible(true);
     }
 
@@ -138,7 +133,7 @@ public class OnlineGameConnector {
     private void updateVisualRoster(String rawRosterData) {
         rosterPanel.removeAll();
 
-        // 1. Render the Dealer's Profile Block
+        // 1. Dealer Profile
         JPanel dealerBlock = new JPanel(new BorderLayout());
         dealerBlock.setOpaque(false);
         JLabel dealerAvatar = new JLabel();
@@ -152,9 +147,7 @@ public class OnlineGameConnector {
         dealerBlock.add(dealerAvatar, BorderLayout.CENTER);
         dealerBlock.add(dealerNameLabel, BorderLayout.SOUTH);
 
-        String cleanTurn = currentTurnPlayerName.trim().replaceAll("\\s+", "");
-
-        if (cleanTurn.equalsIgnoreCase("Dealer(House)") || cleanTurn.equalsIgnoreCase("Dealer")) {
+        if (currentTurnPlayerName.equalsIgnoreCase("Dealer")) {
             dealerNameLabel.setForeground(Color.YELLOW);
             dealerNameLabel.setText("Dealer ★ Active");
             dealerBlock.setBorder(BorderFactory.createLineBorder(new Color(255, 215, 0), 3, true)); 
@@ -164,7 +157,7 @@ public class OnlineGameConnector {
         }
         rosterPanel.add(dealerBlock);
 
-        // 2. Parse and Render Connected Players Blocks
+        // 2. Players
         if (rawRosterData != null && !rawRosterData.isEmpty()) {
             String[] participants = rawRosterData.split(";");
             for (String part : participants) {
@@ -188,22 +181,19 @@ public class OnlineGameConnector {
                 JLabel pNameLabel = new JLabel(name, JLabel.CENTER);
                 pNameLabel.setFont(new Font("Times New Roman", Font.PLAIN, 12));
                 
-                String cleanName = name.trim().replaceAll("\\s+", "");
-                String cleanLocalName = client.getPlayerName().trim().replaceAll("\\s+", "");
-
-                if (cleanName.equalsIgnoreCase(cleanLocalName)) {
+                if (name.equalsIgnoreCase(client.getPlayerName().trim())) {
                     pNameLabel.setText(name + " (You)");
                     pNameLabel.setForeground(Color.GREEN);
                 } else {
                     pNameLabel.setForeground(Color.WHITE);
                 }
 
-                if (cleanName.equalsIgnoreCase(cleanTurn)) {
+                if (name.equalsIgnoreCase(currentTurnPlayerName)) {
                     pNameLabel.setText(pNameLabel.getText() + " ➔ Turn");
                     pNameLabel.setFont(new Font("Times New Roman", Font.BOLD, 12));
                     pBlock.setBorder(BorderFactory.createLineBorder(new Color(255, 215, 0), 3, true)); 
                 } else {
-                    if (cleanName.equalsIgnoreCase(cleanLocalName)) {
+                    if (name.equalsIgnoreCase(client.getPlayerName().trim())) {
                         pBlock.setBorder(BorderFactory.createLineBorder(new Color(0, 255, 0, 80), 1, true));
                     } else {
                         pBlock.setBorder(BorderFactory.createLineBorder(new Color(255, 255, 255, 40), 1, true));
@@ -274,13 +264,11 @@ public class OnlineGameConnector {
     private void processServerMessage(String message) {
         System.out.println("[Server Data]: " + message);
 
-        // 1. Process Roster Updates
         if (message.contains("ROSTER_UPDATE:")) {
             String data = message.substring(message.indexOf("ROSTER_UPDATE:") + 14).trim();
             updateVisualRoster(data);
         }
         
-        // 2. Clear Canvas on Game Start
         else if (message.contains("GAME_STARTED")) {
             statusLabel.setText("Game Started! Good Luck!");
             playerCardPanel.removeAll();
@@ -289,7 +277,6 @@ public class OnlineGameConnector {
             dealerCardPanel.revalidate();
         } 
         
-        // 3. Render Hand Layouts
         else if (message.contains("DEALER_INFO:")) {
             dealerCardPanel.removeAll();
             String content = message.substring(message.indexOf("DEALER_INFO:") + 12).trim();
@@ -306,7 +293,6 @@ public class OnlineGameConnector {
             String targetKey = message.contains("PLAYER_CARDS:") ? "PLAYER_CARDS:" : "hit:";
             String content = message.substring(message.indexOf(targetKey) + targetKey.length()).trim();
             
-            // Remove score suffixes like "(10)" or "(25)" if appended by server
             if (content.contains("(")) {
                 content = content.substring(0, content.indexOf("(")).trim();
             }
@@ -319,36 +305,34 @@ public class OnlineGameConnector {
             playerCardPanel.repaint();
         }
 
-        // 4. Update Turn Tracker & Handle Button Toggling EXCLUSIVELY
+        // =============================================================
+        // 🎯 FOOLPROOF UNIFIED ATOMIC ACTIONS
+        // =============================================================
+        // Direct Action Unlocking Signals - Zero String Splitting Overlap
+        if (message.contains("UNLOCK_ACTIONS_FOR_CLIENT")) {
+            statusLabel.setText("★ Your Turn! Make your move. ★");
+            hitButton.setEnabled(true);
+            standButton.setEnabled(true);
+            System.out.println("✅ UI UNLOCKED VIA EXPLICIT PACKET TOKEN.");
+        } 
+        else if (message.contains("LOCK_ACTIONS_FOR_CLIENT")) {
+            statusLabel.setText("Waiting for other players...");
+            hitButton.setEnabled(false);
+            standButton.setEnabled(false);
+            System.out.println("❌ UI LOCKED VIA EXPLICIT PACKET TOKEN.");
+        }
+        
+        // Dynamic Synchronization of Current Turn Names (For Avatar Highlighting only)
         if (message.contains("CURRENT_TURN:")) {
             String activeUser = message.substring(message.indexOf("CURRENT_TURN:") + 13).trim();
             if (activeUser.contains(";")) {
                 activeUser = activeUser.split(";")[0].trim();
             }
-            this.currentTurnPlayerName = activeUser.replaceAll("\\s+", "");
-            
-            // Re-render profiles to shift boundaries
+            this.currentTurnPlayerName = activeUser;
             String cachedData = (String) rosterPanel.getClientProperty("raw_cache");
             updateVisualRoster(cachedData);
-
-            String cleanLocalName = client.getPlayerName().trim().replaceAll("\\s+", "");
-            String cleanActiveTurn = this.currentTurnPlayerName.trim().replaceAll("\\s+", "");
-
-            // Lock or unlock controls based strictly on this instruction frame
-            if (cleanActiveTurn.equalsIgnoreCase(cleanLocalName)) {
-                statusLabel.setText("★ Your Turn! Make your move. ★");
-                hitButton.setEnabled(true);
-                standButton.setEnabled(true);
-                System.out.println("✅ Action Buttons UNLOCKED for Local Client.");
-            } else {
-                statusLabel.setText("Waiting for " + this.currentTurnPlayerName + " to complete their turn...");
-                hitButton.setEnabled(false);
-                standButton.setEnabled(false);
-                System.out.println("❌ Action Buttons LOCKED. Waiting for peer: " + cleanActiveTurn);
-            }
         }
         
-        // 5. Override and terminate session only if round ending flags are explicitly triggered
         if (message.contains("wins") || message.contains("Congratulations") || message.contains("Dealer is playing")) {
             statusLabel.setText("<html><font color='yellow'>" + message + "</font></html>");
             hitButton.setEnabled(false);
