@@ -148,15 +148,15 @@ public class BlackjackServer {
             
             sendRosterSync();
             
-            // 🎯 【核心修复点】开局时给第一个玩家精准发送解锁令牌
+            
             if (!turnOrderList.isEmpty()) {
                 PrintWriter firstClient = turnOrderList.get(0);
                 RemotePlayerData firstPlayer = table.get(firstClient);
                 
-                // 广播当前是谁的回合（用于高亮顶部头像边框）
+               
                 broadcast("CURRENT_TURN:" + firstPlayer.player.getName());
                 
-                // 遍历所有连接，给第一名玩家发送解锁，其他人发送锁定
+                
                 for (PrintWriter writer : table.keySet()) {
                     if (writer == firstClient) {
                         writer.println("[Arena]: UNLOCK_ACTIONS_FOR_CLIENT");
@@ -219,7 +219,7 @@ public class BlackjackServer {
             if (nextData != null && nextData.player.getName() != null) {
                 broadcast("CURRENT_TURN:" + nextData.player.getName());
                 
-                // 🎯 换牌机制精准定向控制：给当前操作者解锁，其余人锁死
+               
                 for (PrintWriter writer : table.keySet()) {
                     if (writer == nextClient) {
                         writer.println("[Arena]: UNLOCK_ACTIONS_FOR_CLIENT");
@@ -235,7 +235,7 @@ public class BlackjackServer {
             broadcast("CURRENT_TURN:Dealer");
             broadcast("Dealer is playing out their hand...");
             
-            // 庄家回合时锁定所有玩家的按钮
+           
             for (PrintWriter writer : table.keySet()) {
                 writer.println("[Arena]: LOCK_ACTIONS_FOR_CLIENT");
             }
@@ -261,7 +261,7 @@ public class BlackjackServer {
         if (data != null) {
             broadcast("CURRENT_TURN:" + data.player.getName());
             
-            // 🎯 断开连接时，也要同步定向解锁新轮到的玩家
+          
             for (PrintWriter writer : table.keySet()) {
                 if (writer == currentActiveClient) {
                     writer.println("[Arena]: UNLOCK_ACTIONS_FOR_CLIENT");
