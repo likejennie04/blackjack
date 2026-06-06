@@ -44,7 +44,7 @@ public class FinalBoardPrint {
                 outcome = " WIN (Dealer Busted)";
             } else if (score > dealerScore) {
                 resultsBanner.append("Win");
-                outcome = " WIN (Higher Score)";
+                outcome = " WIN (Higher Score)"; 
             } else if (score < dealerScore) {
                 resultsBanner.append("Lose");
                 outcome = " LOSE";

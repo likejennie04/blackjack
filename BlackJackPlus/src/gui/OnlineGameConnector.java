@@ -82,8 +82,12 @@ public class OnlineGameConnector {
 
         hitButton = new JButton("HIT");
         standButton = new JButton("STAND");
-        settingButton = new JButton("SETTINGS ⚙️"); // 🎯 联机设置入口
+        settingButton = new JButton("SETTINGS");
         returnButton = new JButton("RETURN");
+        styleActionButton(hitButton, new Color(180, 40, 40));
+        styleActionButton(standButton, new Color(40, 100, 180));
+        styleActionButton(settingButton, new Color(100, 100, 100));
+        
 
         hitButton.setEnabled(false);
         standButton.setEnabled(false);
@@ -118,8 +122,16 @@ public class OnlineGameConnector {
         frame.add(mainPanel);
         frame.setVisible(true);
     }
+    private void styleActionButton(JButton button, Color bg) {
+        button.setPreferredSize(new Dimension(120, 40)); 
+        button.setBackground(bg); 
+        button.setForeground(Color.WHITE); 
+        button.setFont(new Font("Times New Roman", Font.BOLD, 14)); 
+        button.setFocusPainted(false); 
+        button.setBorderPainted(false); 
+        button.setOpaque(true); 
+    }
 
-   
     public void updateTheme() {
         if (mainPanel != null && tablePanel != null) {
             mainPanel.setBackground(Config.tableColor);
