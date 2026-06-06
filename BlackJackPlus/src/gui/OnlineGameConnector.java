@@ -82,7 +82,11 @@ public class OnlineGameConnector {
 
         hitButton = new JButton("HIT");
         standButton = new JButton("STAND");
+<<<<<<< HEAD
         settingButton = new JButton("SETTINGS");
+=======
+        settingButton = new JButton("SETTINGS"); 
+>>>>>>> branch 'main' of https://github.com/likejennie04/blackjack.git
         returnButton = new JButton("RETURN");
         styleActionButton(hitButton, new Color(180, 40, 40));
         styleActionButton(standButton, new Color(40, 100, 180));
