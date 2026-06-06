@@ -7,15 +7,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.URL;
 
-/**
- * Fully stabilized OnlineGameConnector.
- * Controls paths based strictly on unified server sequence triggers.
- */
 public class OnlineGameConnector {
     private JFrame frame;
     private BlackjackClient client;
 
-    // --- UI Components ---
     private JLabel statusLabel;
     private JPanel playerCardPanel;
     private JPanel dealerCardPanel;
@@ -81,7 +76,6 @@ public class OnlineGameConnector {
         standButton = new JButton("Stand");
         returnButton = new JButton("Return to Menu");
 
-        // Guarded components - locked until server grants access
         hitButton.setEnabled(false);
         standButton.setEnabled(false);
 
@@ -133,7 +127,6 @@ public class OnlineGameConnector {
     private void updateVisualRoster(String rawRosterData) {
         rosterPanel.removeAll();
 
-        // 1. Dealer Profile
         JPanel dealerBlock = new JPanel(new BorderLayout());
         dealerBlock.setOpaque(false);
         JLabel dealerAvatar = new JLabel();
@@ -147,7 +140,9 @@ public class OnlineGameConnector {
         dealerBlock.add(dealerAvatar, BorderLayout.CENTER);
         dealerBlock.add(dealerNameLabel, BorderLayout.SOUTH);
 
-        if (currentTurnPlayerName.equalsIgnoreCase("Dealer")) {
+        String cleanTurn = currentTurnPlayerName.trim().replaceAll("\\s+", "");
+
+        if (cleanTurn.equalsIgnoreCase("Dealer(House)") || cleanTurn.equalsIgnoreCase("Dealer")) {
             dealerNameLabel.setForeground(Color.YELLOW);
             dealerNameLabel.setText("Dealer ★ Active");
             dealerBlock.setBorder(BorderFactory.createLineBorder(new Color(255, 215, 0), 3, true)); 
@@ -157,7 +152,6 @@ public class OnlineGameConnector {
         }
         rosterPanel.add(dealerBlock);
 
-        // 2. Players
         if (rawRosterData != null && !rawRosterData.isEmpty()) {
             String[] participants = rawRosterData.split(";");
             for (String part : participants) {
@@ -181,19 +175,22 @@ public class OnlineGameConnector {
                 JLabel pNameLabel = new JLabel(name, JLabel.CENTER);
                 pNameLabel.setFont(new Font("Times New Roman", Font.PLAIN, 12));
                 
-                if (name.equalsIgnoreCase(client.getPlayerName().trim())) {
+                String cleanName = name.trim().replaceAll("\\s+", "");
+                String cleanLocalName = client.getPlayerName().trim().replaceAll("\\s+", "");
+
+                if (cleanName.equalsIgnoreCase(cleanLocalName)) {
                     pNameLabel.setText(name + " (You)");
                     pNameLabel.setForeground(Color.GREEN);
                 } else {
                     pNameLabel.setForeground(Color.WHITE);
                 }
 
-                if (name.equalsIgnoreCase(currentTurnPlayerName)) {
+                if (cleanName.equalsIgnoreCase(cleanTurn)) {
                     pNameLabel.setText(pNameLabel.getText() + " ➔ Turn");
                     pNameLabel.setFont(new Font("Times New Roman", Font.BOLD, 12));
                     pBlock.setBorder(BorderFactory.createLineBorder(new Color(255, 215, 0), 3, true)); 
                 } else {
-                    if (name.equalsIgnoreCase(client.getPlayerName().trim())) {
+                    if (cleanName.equalsIgnoreCase(cleanLocalName)) {
                         pBlock.setBorder(BorderFactory.createLineBorder(new Color(0, 255, 0, 80), 1, true));
                     } else {
                         pBlock.setBorder(BorderFactory.createLineBorder(new Color(255, 255, 255, 40), 1, true));
@@ -288,15 +285,10 @@ public class OnlineGameConnector {
             dealerCardPanel.repaint();
         }
         
-        else if (message.contains("PLAYER_CARDS:") || message.contains("hit:")) {
+       
+        else if (message.contains("PLAYER_CARDS:")) {
             playerCardPanel.removeAll(); 
-            String targetKey = message.contains("PLAYER_CARDS:") ? "PLAYER_CARDS:" : "hit:";
-            String content = message.substring(message.indexOf(targetKey) + targetKey.length()).trim();
-            
-            if (content.contains("(")) {
-                content = content.substring(0, content.indexOf("(")).trim();
-            }
-            
+            String content = message.substring(message.indexOf("PLAYER_CARDS:") + 13).trim();
             String[] cards = content.split(",");
             for (String card : cards) {
                 if (!card.trim().isEmpty()) displayCard(playerCardPanel, card.trim());
@@ -304,37 +296,45 @@ public class OnlineGameConnector {
             playerCardPanel.revalidate();
             playerCardPanel.repaint();
         }
+        
+        
+        else if (message.contains("PEER_CARDS:")) {
+            String content = message.substring(message.indexOf("PEER_CARDS:") + 11).trim();
+            String[] tokens = content.split(":");
+            if (tokens.length >= 2) {
+                String peerName = tokens[0].trim();
+                String peerCards = tokens[1].trim();
+                if (!peerName.equalsIgnoreCase(client.getPlayerName().trim())) {
+                    System.out.println("Peer Hand Notice -> [" + peerName + "] holds: " + peerCards);
+                }
+            }
+        }
 
-        // =============================================================
-        // 🎯 FOOLPROOF UNIFIED ATOMIC ACTIONS
-        // =============================================================
-        // Direct Action Unlocking Signals - Zero String Splitting Overlap
         if (message.contains("UNLOCK_ACTIONS_FOR_CLIENT")) {
             statusLabel.setText("★ Your Turn! Make your move. ★");
             hitButton.setEnabled(true);
             standButton.setEnabled(true);
-            System.out.println("✅ UI UNLOCKED VIA EXPLICIT PACKET TOKEN.");
         } 
         else if (message.contains("LOCK_ACTIONS_FOR_CLIENT")) {
             statusLabel.setText("Waiting for other players...");
             hitButton.setEnabled(false);
             standButton.setEnabled(false);
-            System.out.println("❌ UI LOCKED VIA EXPLICIT PACKET TOKEN.");
         }
         
-        // Dynamic Synchronization of Current Turn Names (For Avatar Highlighting only)
         if (message.contains("CURRENT_TURN:")) {
             String activeUser = message.substring(message.indexOf("CURRENT_TURN:") + 13).trim();
             if (activeUser.contains(";")) {
                 activeUser = activeUser.split(";")[0].trim();
             }
-            this.currentTurnPlayerName = activeUser;
+            this.currentTurnPlayerName = activeUser.replaceAll("\\s+", "");
             String cachedData = (String) rosterPanel.getClientProperty("raw_cache");
             updateVisualRoster(cachedData);
         }
         
-        if (message.contains("wins") || message.contains("Congratulations") || message.contains("Dealer is playing")) {
-            statusLabel.setText("<html><font color='yellow'>" + message + "</font></html>");
+       
+        if (message.contains("GAME_OVER_SUMMARY:")) {
+            String summary = message.substring(message.indexOf("GAME_OVER_SUMMARY:") + 18).trim();
+            statusLabel.setText("<html><font color='yellow' size='4'>" + summary + "</font></html>");
             hitButton.setEnabled(false);
             standButton.setEnabled(false);
         }
