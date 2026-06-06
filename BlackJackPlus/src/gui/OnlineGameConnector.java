@@ -85,10 +85,11 @@ public class OnlineGameConnector {
         settingButton = new JButton("SETTINGS");
         settingButton = new JButton("SETTINGS"); 
         returnButton = new JButton("RETURN");
+        
         styleActionButton(hitButton, new Color(180, 40, 40));
         styleActionButton(standButton, new Color(40, 100, 180));
         styleActionButton(settingButton, new Color(100, 100, 100));
-        
+        styleActionButton(returnButton, new Color(100, 100, 100));        
 
         hitButton.setEnabled(false);
         standButton.setEnabled(false);
