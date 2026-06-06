@@ -10,6 +10,8 @@ public class BlackjackServer {
     private static final Map<PrintWriter, RemotePlayerData> table = new ConcurrentHashMap<>();
     private static final List<PrintWriter> turnOrderList = new CopyOnWriteArrayList<>();
     
+    private static PrintWriter hostPlayer =null; 
+    
     private static final Deck sharedDeck = new Deck();
     private static final List<Card> dealerHand = new ArrayList<>(); 
     
@@ -63,6 +65,14 @@ public class BlackjackServer {
                 this.out = output;
                 this.data = new RemotePlayerData(out);
                 table.put(out, data);
+                
+                synchronized(BlackjackServer.class) {
+                	if (hostPlayer ==null) {
+                		hostPlayer = out; 
+                		out.println("[Arena]: YOU_ARE_HOST"); 
+                		System.out.println("Host assigned."); 
+                	}
+                }
 
                 String input;
                 while ((input = in.readLine()) != null) {
@@ -83,8 +93,12 @@ public class BlackjackServer {
                     }
 
                     if (input.equalsIgnoreCase("START_COMMAND")) {
-                        handleStartGame();
-                        continue;
+                        if (out == hostPlayer) {
+                        	handleStartGame(); 
+                        } else  {
+                        	out.println("[Arena]: WAIT_FOR_HOST"); 
+                        }
+                        continue; 
                     }
 
                     if (input.equalsIgnoreCase("hit")) {
@@ -104,16 +118,39 @@ public class BlackjackServer {
                 }
             } catch (IOException e) {
                 System.out.println("Player left.");
-            } finally {
+            }finally {
                 if (out != null) {
+
                     table.remove(out);
                     turnOrderList.remove(out);
+                    if (out == hostPlayer) {
+
+                        hostPlayer = null;
+
+                        for (PrintWriter writer : table.keySet()) {
+
+                            hostPlayer = writer;
+
+                            writer.println("[Arena]: YOU_ARE_HOST");
+
+                            System.out.println("New host assigned.");
+
+                            break;
+                        }
+                    }
                 }
+
                 sendRosterSync();
+
                 if (isGameActive && !turnOrderList.isEmpty()) {
                     advanceTurn();
                 }
-                try { socket.close(); } catch (IOException e) { e.printStackTrace(); }
+
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
 
@@ -253,7 +290,6 @@ public class BlackjackServer {
     }
 
     private static void evaluateFinalResults(int dealerScore) {
-        // 🎯 统一发包前缀字眼，确保两端绝对对接
         StringBuilder sb = new StringBuilder("GAME_OVER_SUMMARY: ");
         sb.append("■ HOUSE DEALER FINAL SCORE: ").append(dealerScore > 21 ? "Busted (Score 25)" : dealerScore).append(" | ");
         

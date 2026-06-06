@@ -9,9 +9,6 @@ import java.util.ArrayList;
 
 public class FinalBoardPrint {
 
-    /**
-     * 🎯 离线单机版原有方法（100% 完全保留，一字不改，确保你离线模式完美运行）
-     */
     public static String showSummary(JFrame parentFrame, House dealer, 
                                      ArrayList<Player> playerList, 
                                      ArrayList<Computer> aiList, 
@@ -104,17 +101,12 @@ public class FinalBoardPrint {
         return resultsBanner.toString();
     }
 
-    /**
-     * 🎯 【联机版独创重载点】
-     * 专门负责在网络联机对局结束时，承接 OnlineGameConnector 发来的数据。
-     */
     public static void showOnlineSummary(JFrame parentFrame, String snapshotData, 
                                          backend.BlackjackClient client, OnlineGameConnector connector) {
         
         House dealer = new House();
         ArrayList<Player> playerList = new ArrayList<>();
         
-        // 拆包并反向填充卡牌实体
         String[] rows = snapshotData.split(";");
         for (String row : rows) {
             if (row.trim().isEmpty()) continue;
@@ -127,7 +119,6 @@ public class FinalBoardPrint {
             if (name.contains("Dealer")) {
                 for (String c : cards) {
                     if(!c.trim().isEmpty() && !c.equalsIgnoreCase("HIDDEN")) {
-                        // 🎯 修复点：调用解析器转换成 int 重新塞入对应的构造方法
                         Card targetCard = parseCardString(c.trim());
                         if(targetCard != null) dealer.addCard(targetCard); 
                     }
@@ -146,9 +137,7 @@ public class FinalBoardPrint {
         }
 
         SoundManager.playSummaryMusic();
-        
-        // 完全使用你离线单机版一模一样的排版划线设计
-        StringBuilder dialogMessage = new StringBuilder();
+                StringBuilder dialogMessage = new StringBuilder();
         int dealerScore = dealer.getScore();
         dialogMessage.append("=== THE END (ONLINE) ===\n\n");
         dialogMessage.append(String.format("Dealer (House) Score: %d %s\n", 
@@ -169,7 +158,6 @@ public class FinalBoardPrint {
             dialogMessage.append(String.format(" Player %d [%s]:  Score: %d  ->  %s\n", (i + 1), p.getName(), score, outcome));
         }
 
-        // 按钮选择拦截处理器：支持 Restart 与 Return
         Object[] options = {"Restart", "Return"};
         int choice = JOptionPane.showOptionDialog(
             parentFrame, 
@@ -195,10 +183,6 @@ public class FinalBoardPrint {
         }
     }
 
-    /**
-     * 🎯 【网络资产翻译器】
-     * 将网络传来的 "2h", "10d", "As" 代码翻译成符合原设计规范的 int(rank) 和 int(suit) 并组装成实体
-     */
     private static Card parseCardString(String cardCode) {
         try {
             cardCode = cardCode.trim().toLowerCase();
@@ -215,17 +199,16 @@ public class FinalBoardPrint {
                 case "q":  rank = 11; break;
                 case "k":  rank = 12; break;
                 default:
-                    rank = Integer.parseInt(rankPart) - 1; 
+                    rank = Integer.parseInt(rankPart); 
                     break;
             }
 
-            
             int suit;
             switch (suitPart) {
-                case 's': suit = 0; break; // Spades
-                case 'h': suit = 1; break; // Hearts
-                case 'c': suit = 2; break; // Clubs
-                case 'd': suit = 3; break; // Diamonds
+                case 's': suit = 0; break; 
+                case 'h': suit = 1; break; 
+                case 'c': suit = 2; break; 
+                case 'd': suit = 3; break; 
                 default:  suit = 0; break;
             }
 
