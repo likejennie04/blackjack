@@ -302,8 +302,7 @@ public class OnlineGameConnector {
                 standButton.setEnabled(true);
             } else {
                 statusLabel.setText("Waiting for " + activeUser + " to complete their turn...");
-                hitButton.setEnabled(false);
-                standButton.setEnabled(false);
+                
             }
         }
 
