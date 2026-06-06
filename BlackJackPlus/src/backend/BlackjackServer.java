@@ -21,16 +21,16 @@ public class BlackjackServer {
         
         try (ServerSocket serverSocket = new ServerSocket(8888)) {
             System.out.println("Blackjack Arena started successfully!");
-            System.out.println("👉 Tell your friends to connect to IP: " + getSystemIP() + " on port 8888\n");
+            System.out.println("👉 LAN IP for peers: " + getSystemIP() + " on port 8888\n");
 
             while (true) {
                 Socket socket = serverSocket.accept();
                 new Thread(new ClientHandler(socket)).start();
             }
         } catch (BindException e) {
-            System.err.println("\n⚠️ [SERVER ERROR]: Port 8888 is already bound!");
+            System.err.println("\n⚠️ [SERVER ERROR]: Port 8888 bound.");
         } catch (IOException e) {
-            System.err.println("General I/O Exception starting the server: " + e.getMessage());
+            System.err.println("General I/O Exception: " + e.getMessage());
         }
     }
 
@@ -62,7 +62,6 @@ public class BlackjackServer {
             ) {
                 this.out = output;
                 this.data = new RemotePlayerData(out);
-                
                 table.put(out, data);
 
                 String input;
@@ -71,7 +70,6 @@ public class BlackjackServer {
                     if (input.startsWith("NAME_REGISTER:")) {
                         String name = input.substring(14).trim();
                         data.player.setName(name);
-                        broadcast(name + " has joined the table.");
                         sendRosterSync();
                         continue;
                     }
@@ -98,9 +96,14 @@ public class BlackjackServer {
                         handleStandAction();
                         continue;
                     }
+
+                    if (input.equalsIgnoreCase("REQUEST_SNAPSHOT")) {
+                        broadcastTableSnapshot();
+                        continue;
+                    }
                 }
             } catch (IOException e) {
-                System.out.println("Player disconnected mapping sequence details.");
+                System.out.println("Player left.");
             } finally {
                 if (out != null) {
                     table.remove(out);
@@ -108,17 +111,14 @@ public class BlackjackServer {
                 }
                 sendRosterSync();
                 if (isGameActive && !turnOrderList.isEmpty()) {
-                    checkAndAdvanceTurnOnDisconnect();
+                    advanceTurn();
                 }
                 try { socket.close(); } catch (IOException e) { e.printStackTrace(); }
             }
         }
 
         private void handleStartGame() {
-            if (table.isEmpty()) {
-                out.println("[Arena]: Error: No players available to start!");
-                return;
-            }
+            if (table.isEmpty()) return;
             
             isGameActive = true;
             sharedDeck.shuffle();
@@ -126,38 +126,29 @@ public class BlackjackServer {
             turnOrderList.clear();
             currentTurnIndex = 0;
 
-            Card d1 = sharedDeck.dealCard();
-            dealerHand.add(d1);
             dealerHand.add(sharedDeck.dealCard());
-            
-            broadcast("DEALER_INFO: " + d1 + ", [Hidden Card]");
+            dealerHand.add(sharedDeck.dealCard());
 
             for (Map.Entry<PrintWriter, RemotePlayerData> entry : table.entrySet()) {
                 PrintWriter writer = entry.getKey();
                 Player p = entry.getValue().player;
                 p.reset(); 
                 
-                Card c1 = sharedDeck.dealCard();
-                Card c2 = sharedDeck.dealCard();
-                p.addCard(c1);
-                p.addCard(c2);
-                
-                writer.println("[Arena]: GAME_STARTED");
+                p.addCard(sharedDeck.dealCard());
+                p.addCard(sharedDeck.dealCard());
                 
                
-                writer.println("[Arena]: PLAYER_CARDS: " + c1 + ", " + c2);
-                
+                writer.println("[Arena]: GAME_STARTED");
                 turnOrderList.add(writer);
             }
             
-           
-            broadcastPEERCardUpdates();
+            
+            broadcastTableSnapshot();
             sendRosterSync();
             
             if (!turnOrderList.isEmpty()) {
                 PrintWriter firstClient = turnOrderList.get(0);
                 RemotePlayerData firstPlayer = table.get(firstClient);
-                
                 broadcast("CURRENT_TURN:" + firstPlayer.player.getName());
                 
                 for (PrintWriter writer : table.keySet()) {
@@ -171,47 +162,26 @@ public class BlackjackServer {
         }
 
         private void handleHitAction() {
-            if (isNotCurrentTurn()) {
-                out.println("[Arena]: It is not your turn!");
-                return;
-            }
+            if (isNotCurrentTurn()) return;
 
             Player p = data.player;
             p.addCard(sharedDeck.dealCard());
             
-            // 告诉自己手牌变了
-            out.println("[Arena]: PLAYER_CARDS: " + p.toString());
-            // 广播给所有人同步对手面板
-            broadcastPEERCardUpdates();
+         
+            broadcastTableSnapshot();
 
-            if (p.isFiveCardCharlie()) {
-                broadcast("🌟 " + p.getName() + " achieved a 5-Card Charlie! Automatic Turn Pass.");
-                advanceTurn();
-            } 
-            else if (p.isBusted()) {
-                broadcast("💥 " + p.getName() + " Busted with hand: " + p.toString());
+            if (p.isFiveCardCharlie() || p.isBusted()) {
                 advanceTurn(); 
-            } 
-            else {
-                broadcast(p.getName() + " hit a card.");
             }
         }
 
         private void handleStandAction() {
-            if (isNotCurrentTurn()) {
-                out.println("[Arena]: It is not your turn!");
-                return;
-            }
-
-            broadcast(data.player.getName() + " stands with score: " + getPlayerScoreText(data.player));
+            if (isNotCurrentTurn()) return;
             advanceTurn(); 
         }
 
         private boolean isNotCurrentTurn() {
-            return !isGameActive || 
-                   turnOrderList.isEmpty() || 
-                   currentTurnIndex >= turnOrderList.size() || 
-                   turnOrderList.get(currentTurnIndex) != out;
+            return !isGameActive || turnOrderList.isEmpty() || currentTurnIndex >= turnOrderList.size() || turnOrderList.get(currentTurnIndex) != out;
         }
     }
 
@@ -222,7 +192,6 @@ public class BlackjackServer {
             RemotePlayerData nextData = table.get(nextClient);
             if (nextData != null && nextData.player.getName() != null) {
                 broadcast("CURRENT_TURN:" + nextData.player.getName());
-                
                 for (PrintWriter writer : table.keySet()) {
                     if (writer == nextClient) {
                         writer.println("[Arena]: UNLOCK_ACTIONS_FOR_CLIENT");
@@ -234,124 +203,95 @@ public class BlackjackServer {
                 advanceTurn(); 
             }
         } else {
-            
+           
             isGameActive = false; 
-            broadcast("CURRENT_TURN:Dealer (House)");
-            broadcast("Dealer is playing out their hand...");
+            broadcast("CURRENT_TURN:Dealer");
             
             for (PrintWriter writer : table.keySet()) {
                 writer.println("[Arena]: LOCK_ACTIONS_FOR_CLIENT");
             }
 
-           
             int dealerScore = calculateDealerScore();
             while (dealerScore < 17) {
-                Card newCard = sharedDeck.dealCard();
-                dealerHand.add(newCard);
+                dealerHand.add(sharedDeck.dealCard());
                 dealerScore = calculateDealerScore();
-                System.out.println("Dealer hits: " + newCard + " | Current Score: " + dealerScore);
             }
 
+           
+            broadcastTableSnapshot();
             
-            StringBuilder sb = new StringBuilder("DEALER_INFO: ");
-            for(Card card : dealerHand) {
-                sb.append(card).append(", ");
-            }
-            String finalDealerTag = sb.toString().trim();
-            if(finalDealerTag.endsWith(",")) finalDealerTag = finalDealerTag.substring(0, finalDealerTag.length()-1);
-            broadcast(finalDealerTag);
-
-            // 执行全局结算算法并广播结果
+           
             evaluateFinalResults(dealerScore);
         }
     }
 
+    
+    private static void broadcastTableSnapshot() {
+        StringBuilder sb = new StringBuilder("TABLE_SNAPSHOT:");
+        
+        // 1. Append Dealer Rows (If active game, hide first card)
+        sb.append("Dealer (House)=");
+        if (isGameActive && !dealerHand.isEmpty()) {
+            sb.append("HIDDEN,");
+            for (int i = 1; i < dealerHand.size(); i++) {
+                sb.append(dealerHand.get(i)).append(",");
+            }
+        } else {
+            for (Card c : dealerHand) sb.append(c).append(",");
+        }
+        sb.append(";");
+
+        // 2. Append Active Remote Players Hand Assets
+        for (RemotePlayerData pData : table.values()) {
+            if (pData.player.getName() == null) continue;
+            sb.append(pData.player.getName()).append("=");
+            // Filter card strings directly without text metrics suffix
+            String rawHand = pData.player.toString(); 
+            if(rawHand.contains("(")) rawHand = rawHand.substring(0, rawHand.indexOf("(")).trim();
+            sb.append(rawHand).append(";");
+        }
+        broadcast(sb.toString());
+    }
+
     private static int calculateDealerScore() {
-        int score = 0;
-        int aces = 0;
+        int score = 0; int aces = 0;
         for (Card c : dealerHand) {
             String rank = c.toString().substring(0, c.toString().length() - 1).toUpperCase();
-            if (rank.equals("A")) {
-                aces++;
-                score += 11;
-            } else if (rank.equals("J") || rank.equals("Q") || rank.equals("K")) {
-                score += 10;
-            } else {
-                try {
-                    score += Integer.parseInt(rank);
-                } catch (Exception e) {
-                    score += 10;
-                }
-            }
+            if (rank.equals("A")) { aces++; score += 11; }
+            else if (rank.equals("J") || rank.equals("Q") || rank.equals("K")) { score += 10; }
+            else { try { score += Integer.parseInt(rank); } catch (Exception e) { score += 10; } }
         }
-        while (score > 21 && aces > 0) {
-            score -= 10;
-            aces--;
-        }
+        while (score > 21 && aces > 0) { score -= 10; aces--; }
         return score;
     }
 
     private static void evaluateFinalResults(int dealerScore) {
-        StringBuilder results = new StringBuilder("GAME_OVER_SUMMARY: ");
-        results.append("Dealer Score: ").append(dealerScore > 21 ? "Bust" : dealerScore).append(" | ");
-
+        StringBuilder sb = new StringBuilder("SHOW_FINAL_SUMMARY: ");
+        sb.append("■ HOUSE DEALER FINAL SCORE: ").append(dealerScore > 21 ? "Busted (Score 25)" : dealerScore).append(" | ");
+        
         for (RemotePlayerData pData : table.values()) {
             Player p = pData.player;
             if (p.getName() == null) continue;
             
             int pScore = 0;
-            // Native simulation to fetch score securely
-            try {
-                pScore = p.getScore();
-            } catch (Exception e) {
-                pScore = calculateDealerScore(); // Fallback simulation
-            }
-
-            results.append("[").append(p.getName()).append("]: ");
-            if (pScore > 21) {
-                results.append("Bust (Lose)❌ ");
-            } else if (p.isFiveCardCharlie()) {
-                results.append("5-Card Charlie (Win)🏆 ");
-            } else if (dealerScore > 21) {
-                results.append("Win (Dealer Bust)🏆 ");
-            } else if (pScore > dealerScore) {
-                results.append("Win 🏆 ");
-            } else if (pScore < dealerScore) {
-                results.append("Lose ❌ ");
+            String rawHand = p.toString();
+            if (rawHand.contains("(")) {
+                String scoreStr = rawHand.substring(rawHand.indexOf("(")+1, rawHand.indexOf(")")).trim();
+                try { pScore = Integer.parseInt(scoreStr); } catch(Exception e) { pScore = 22; }
             } else {
-                results.append("Push (Tie) 🤝 ");
+                pScore = 18;
             }
-            results.append(" ");
-        }
-        broadcast(results.toString().trim());
-    }
 
-    private static String getPlayerScoreText(Player p) {
-        try { return String.valueOf(p.getScore()); } catch(Exception e) { return "18"; }
-    }
-
-    private static void broadcastPEERCardUpdates() {
-        for (RemotePlayerData pData : table.values()) {
-            if (pData.player.getName() == null) continue;
-            broadcast("PEER_CARDS:" + pData.player.getName() + ":" + pData.player.toString());
+            sb.append("• Player [").append(p.getName()).append("] Final Hand -> Status: ");
+            if (pScore > 21) sb.append("LOSE ❌ (Busted)");
+            else if (p.isFiveCardCharlie()) sb.append("WIN 🏆 (5-Card Charlie!)");
+            else if (dealerScore > 21) sb.append("WIN 🏆 (House Busted)");
+            else if (pScore > dealerScore) sb.append("WIN 🏆");
+            else if (pScore < dealerScore) sb.append("LOSE ❌");
+            else sb.append("PUSH 🤝 (Tie)");
+            sb.append(" | ");
         }
-    }
-
-    private static void checkAndAdvanceTurnOnDisconnect() {
-        if (currentTurnIndex >= turnOrderList.size()) {
-            currentTurnIndex = 0; 
-            if (turnOrderList.isEmpty()) {
-                isGameActive = false;
-                return;
-            }
-        }
-        PrintWriter currentActiveClient = turnOrderList.get(currentTurnIndex);
-        RemotePlayerData data = table.get(currentActiveClient);
-        if (data != null) {
-            broadcast("CURRENT_TURN:" + data.player.getName());
-        } else {
-            advanceTurn();
-        }
+        broadcast(sb.toString());
     }
 
     private static void sendRosterSync() {
@@ -366,11 +306,7 @@ public class BlackjackServer {
 
     private static void broadcast(String message) {
         for (PrintWriter writer : table.keySet()) {
-            if (!message.startsWith("[Arena]:")) {
-                writer.println("[Arena]: " + message);
-            } else {
-                writer.println(message);
-            }
+            writer.println(message.startsWith("[Arena]:") ? message : "[Arena]: " + message);
         }
     }
     
@@ -380,15 +316,12 @@ public class BlackjackServer {
             while (interfaces.hasMoreElements()) {
                 NetworkInterface iface = interfaces.nextElement();
                 if (iface.isLoopback() || !iface.isUp()) continue;
-
                 Enumeration<InetAddress> addresses = iface.getInetAddresses();
                 while (addresses.hasMoreElements()) {
                     InetAddress addr = addresses.nextElement();
                     if (addr instanceof Inet4Address) {
                         String ip = addr.getHostAddress();
-                        if (!ip.startsWith("192.168.56.") && !ip.startsWith("192.168.99.")) {
-                            return ip; 
-                        }
+                        if (!ip.startsWith("192.168.56.")) return ip;
                     }
                 }
             }
