@@ -82,7 +82,7 @@ public class OnlineGameConnector {
 
         hitButton = new JButton("HIT");
         standButton = new JButton("STAND");
-        settingButton = new JButton("SETTINGS ⚙️"); // 🎯 联机设置入口
+        settingButton = new JButton("SETTINGS"); 
         returnButton = new JButton("RETURN");
 
         hitButton.setEnabled(false);
