@@ -27,14 +27,17 @@ public class OnlineGameConnector {
     public OnlineGameConnector(BlackjackClient client) {
         this.client = client;
         
-        if (AvatarManager.getAllAvatars().isEmpty()) {
-            System.out.println("[Image Debug]: Forcing native reconstruction of Avatar assets...");
-            new SettingWindow().dispose(); 
-        }
+        // 🎯 修复点：移除了报错的 dispose() 链，改用反射强行预装载 AvatarManager
+        try {
+            if (AvatarManager.getAllAvatars().isEmpty()) {
+                Class.forName("gui.AvatarManager");
+            }
+        } catch (Exception ignored) {}
 
         initializeGUI();
         startServerListener();
         
+        // Synchronize initial visual request
         client.sendMove("REQUEST_SNAPSHOT");
     }
 
@@ -319,19 +322,16 @@ public class OnlineGameConnector {
         }
         
         if (message.contains("CURRENT_TURN:")) {
-            // Safe extraction without prefix pollution
             String turnData = message.replace("[Arena]:", "").trim();
             this.currentTurnPlayerName = turnData.substring(turnData.indexOf("CURRENT_TURN:") + 13).trim().replaceAll("\\s+", "");
             String cachedData = (String) rosterPanel.getClientProperty("raw_cache");
             if (cachedData != null) updateVisualRoster(cachedData);
         }
         
-        // 🎯 核心安全修改点：规避 Substring 越界崩溃，采用精确替换技术
         if (message.contains("GAME_OVER_SUMMARY:") || message.contains("SHOW_FINAL_SUMMARY:")) {
             hitButton.setEnabled(false);
             standButton.setEnabled(false);
             
-            // Foolproof extraction method using replace instead of index slicing
             String summaryText = message.replace("[Arena]:", "")
                                         .replace("GAME_OVER_SUMMARY:", "")
                                         .replace("SHOW_FINAL_SUMMARY:", "")
@@ -342,7 +342,6 @@ public class OnlineGameConnector {
             
             String[] options = {"Restart Match", "Return to Menu"};
             
-            // Pop up option pane block dynamically
             int choice = JOptionPane.showOptionDialog(
                     frame, 
                     htmlSummary, 
