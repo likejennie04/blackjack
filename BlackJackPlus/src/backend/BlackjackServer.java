@@ -149,7 +149,7 @@ public class BlackjackServer {
                 
                 writer.println("[Arena]: GAME_STARTED");
                 
-                // 🎯 优化点：发牌通知统一格式，确保网络流刷新完整
+               
                 writer.println("[Arena]: PLAYER_CARDS: " + c1 + ", " + c2);
                 
                 turnOrderList.add(writer);
@@ -174,7 +174,6 @@ public class BlackjackServer {
             p.addCard(sharedDeck.dealCard());
             
             if (p.isFiveCardCharlie()) {
-                // Synchronize final 5-card layout before skipping turn
                 broadcast("PLAYER_CARDS: " + p.toString());
                 broadcast("🌟 " + p.getName() + " achieved a 5-Card Charlie! Automatic Turn Pass.");
                 advanceTurn();
@@ -185,8 +184,6 @@ public class BlackjackServer {
                 advanceTurn(); 
             } 
             else {
-                // 🎯 核心修复：这里绝对不能用 out.println！必须用 broadcast！
-                // 这样当你叫牌时，你朋友的电脑也能收到数据，从而同步在“Your Hand”或对应的对手区域渲染卡片！
                 broadcast("PLAYER_CARDS: " + p.toString());
                 broadcast(p.getName() + " hit a card.");
             }
