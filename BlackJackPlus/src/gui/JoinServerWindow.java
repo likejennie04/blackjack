@@ -25,7 +25,6 @@ public class JoinServerWindow {
         frame.setLocationRelativeTo(null);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         
-        // Setup CardLayout or switchable panels natively
         frame.setLayout(new CardLayout());
 
         initializeInputPanel();
@@ -197,20 +196,16 @@ public class JoinServerWindow {
             try {
                 BufferedReader in = client.getInputStream();
                 String serverMessage;
-                // Keep reading packets silently in the background thread
                 while ((serverMessage = in.readLine()) != null) {
                     System.out.println("[Lobby Data Stream]: " + serverMessage);
                     
-                    // The magic signal dispatched by Host Server when clicking "START"
+   
                     if (serverMessage.contains("GAME_STARTED")) {
-                        // Deliver transition to Event Dispatch Thread immediately
                         SwingUtilities.invokeLater(() -> {
-                            // Perfect timing: Launch Arena game table interface now
                             new OnlineGameConnector(client);
-                            // Close the current transition lobby window safely
                             frame.dispose();
                         });
-                        break; // Kill this temporary lobby thread safely
+                        break; 
                     }
                 }
             } catch (IOException e) {

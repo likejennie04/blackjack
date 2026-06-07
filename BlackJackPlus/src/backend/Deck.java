@@ -27,10 +27,7 @@ public class Deck {
         shuffle((int) System.currentTimeMillis());
     }
     
-    /**
-     * Thread-safe card dealing.
-     * Synchronized to handle multiple clients in the arena simultaneously.
-     */
+    
     public synchronized Card dealCard() {
         if (cardsUsed >= cards.length) {
             System.out.println("[Deck]: Reshuffling the deck...");

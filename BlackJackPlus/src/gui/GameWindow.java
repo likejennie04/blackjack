@@ -64,6 +64,14 @@ public class GameWindow {
             for (Hand h: playOrder) h.addCard(cardDeck.dealCard());
         }
         
+        /*
+         * 
+         * 
+         * 
+         * 
+         * GUI
+         */
+        
         frame = new JFrame("BLACKJACK+"); 
         this.applyResolution(Config.windowWidth, Config.windowHeight);
         frame.setSize(Config.windowWidth, Config.windowHeight); 
@@ -136,6 +144,10 @@ public class GameWindow {
         triggerCardFlipTimer();
         
         frame.setVisible(true);
+    }
+    private void setPlayerControls(boolean enabled) {
+    	hitButton.setEnabled(enabled);
+    	standButton.setEnabled(enabled);
     }
 
     private URL getCardImageURL(String cardCode) {
@@ -258,6 +270,11 @@ public class GameWindow {
          }
          
          /*
+          * 
+          * 
+          * 
+          * 
+          * 
           * GAME LOGIC
           */
      
@@ -284,7 +301,7 @@ public class GameWindow {
 
     private JPanel createPlayerRowPanel(String name, String currentScore, String[] cards) {
         JPanel row = new JPanel(new BorderLayout()); 
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110)); // Bumped height slightly for cards
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110)); 
         row.setBackground(Config.tableColor); 
         row.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(255, 255, 255, 30), 1),
@@ -322,6 +339,10 @@ public class GameWindow {
         row.add(handPanel, BorderLayout.CENTER); 
         return row; 
     }
+    
+    /*
+     * action handling
+     */
 
     private void handelHitAction() {
         Player currentPlayer = playerList.get(currentPlayerIndex);
@@ -361,6 +382,10 @@ public class GameWindow {
         	executeDealerPhase(); 
         }
     }
+    
+    /*
+     * natural thinking process
+     */
     private void processNextAiTurn (final int aiIndex) {
     	if (aiIndex >= aiList.size()) {
     		executeDealerPhase(); 
@@ -416,6 +441,11 @@ public class GameWindow {
     	dealerActionTimer.setRepeats(false);
     	dealerActionTimer.start();
     }
+    
+    
+    /*
+     * end game
+     */
 
     private void evaluateFinalWinners() {
     	String bannerResultsText = FinalBoardPrint.showSummary(frame, dealer, playerList, aiList, gameMode, this); 
@@ -459,17 +489,15 @@ public class GameWindow {
     }
     private void triggerCardFlipTimer(){
     	cardsRevealed = false; 
-    	hitButton.setEnabled(false);
-    	standButton.setEnabled(false);
-    	 statusLabel.setText("Dealing cards face down...");
+    	setPlayerControls(false); 
+    	statusLabel.setText("Dealing cards face down...");
      	buildTableRows(); 
      	
      	Timer timer = new Timer(1500, new ActionListener() { 
      		@Override 
      		public void actionPerformed(ActionEvent e) {
      			cardsRevealed = true; 
-     			hitButton.setEnabled(true); 
-     			standButton.setEnabled(true);
+     			setPlayerControls(true); 
                  statusLabel.setText("Your Turn! Use the control panel buttons below.");
                  buildTableRows(); 
      		}

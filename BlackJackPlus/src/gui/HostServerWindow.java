@@ -111,7 +111,7 @@ public class HostServerWindow {
             }
         });
         
-        // Step 2: Transition to Game Arena
+        //  Transition to Game Arena
         startGameButton.addActionListener(e -> {
             SoundManager.buttonTwo();
             if (hostClient != null) {

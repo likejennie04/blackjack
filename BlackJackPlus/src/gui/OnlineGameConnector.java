@@ -27,6 +27,12 @@ public class OnlineGameConnector {
     private JFrame resultWindow; 
 
     
+    /*
+     * 
+     * 
+     * GUI AREA
+     */
+    
     public OnlineGameConnector(BlackjackClient client) {
         this.client = client;
         gameState = new OnlineGameState(); 
@@ -147,6 +153,10 @@ public class OnlineGameConnector {
         }
     }
 
+    /*
+     * BACKEND - CONNECTOR
+     * 
+     */
     
     private void startServerListener() {
         new Thread(() -> {
@@ -192,7 +202,6 @@ public class OnlineGameConnector {
   
 
  
-    
  
 
     private void updateVisualRoster() {
@@ -237,6 +246,10 @@ public class OnlineGameConnector {
         new BlackjackStartWindow();
     }
     
+    /*
+     * handle player actions
+     */
+    
     private void handleRosterUpdate(String message) {
 
         String data =
@@ -245,8 +258,7 @@ public class OnlineGameConnector {
                         .trim();
 
         gameState.updateRoster(data);
-
-        refreshRoster();
+        updateVisualRoster();
     }
     
     private void refreshRoster() {
@@ -291,6 +303,7 @@ public class OnlineGameConnector {
         }
        clearTable(); 
     }
+    
 
     private void handleGameOver() {
 
@@ -327,49 +340,64 @@ public class OnlineGameConnector {
     
     
     
-    
+    //procsseing message from the players
 
     private void processServerMessage(String message) {
         System.out.println("[Server Data]: " + message);
 
-       
-        if (message.contains("GAME_STARTED") || message.contains("ROUND_START") || message.contains("NEW_ROUND")) {
-        	handleNewRound();
-        }
-        	
-        if (message.contains("TABLE_SNAPSHOT:")) {
-           handleTableSnapshot(message); 
-        }
-        
+        String msg = message.trim();
 
-        if (message.contains("ROSTER_UPDATE:")) {
-            handleRosterUpdate(message); 
+        if (msg.contains("NEW_ROUND") ||
+            msg.contains("ROUND_START") ||
+            msg.contains("GAME_STARTED")) {
+
+            handleNewRound();
+            return;
         }
-        
-        if (message.contains("WAIT_FOR_HOST")) {
+
+        if (msg.contains("TABLE_SNAPSHOT:")) {
+            handleTableSnapshot(msg);
+            return;
+        }
+
+        if (msg.contains("ROSTER_UPDATE:")) {
+            handleRosterUpdate(msg);
+            return;
+        }
+
+        if (msg.contains("CURRENT_TURN:")) {
+            handleCurrentTurn(msg);
+            return;
+        }
+
+        if (msg.contains("WAIT_FOR_HOST")) {
             statusLabel.setText("Waiting for host to restart the game...");
-            setPlayerControls(false); 
-        }
-        if (message.contains("YOU_ARE_HOST")) {
-            statusLabel.setText("You are the host.");
+            setPlayerControls(false);
+            return;
         }
 
-        if (message.contains("UNLOCK_ACTIONS_FOR_CLIENT")) {
+        if (msg.contains("YOU_ARE_HOST")) {
+            statusLabel.setText("You are the host.");
+            return;
+        }
+
+        if (msg.contains("UNLOCK_ACTIONS_FOR_CLIENT")) {
             statusLabel.setText("★ Your Turn! Make your move. ★");
-            setPlayerControls(true); 
-        } 
-        else if (message.contains("LOCK_ACTIONS_FOR_CLIENT")) {
+            setPlayerControls(true);
+            return;
+        }
+
+        if (msg.contains("LOCK_ACTIONS_FOR_CLIENT")) {
             statusLabel.setText("Waiting for other players...");
-            setPlayerControls(false); 
+            setPlayerControls(false);
+            return;
         }
-        
-        if (message.contains("CURRENT_TURN:")) {
-            handleCurrentTurn(message); 
+
+        if (msg.contains("GAME_OVER_SUMMARY:")
+            || msg.contains("SHOW_FINAL_SUMMARY:")) {
+
+            handleGameOver();
+            return;
         }
-        if (message.contains("GAME_OVER_SUMMARY:")
-                || message.contains("SHOW_FINAL_SUMMARY:")) {
-        	handleGameOver(); 
-        }
-            
     }
 }
