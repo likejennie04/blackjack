@@ -173,6 +173,11 @@ public class FinalBoardPrint {
         if (choice == JOptionPane.YES_OPTION) { 
             SoundManager.buttonOne();
             SoundManager.switchDefaultMusic(); 
+            
+            if (connector != null) {
+                connector.setResultWindow(null);
+            }
+
             client.sendMove("START_COMMAND"); 
         } else { 
             System.out.println("Exiting online match.");

@@ -1,17 +1,19 @@
 package gui;
 
 import javax.swing.*;
+import backend.OnlineGameState;
 import backend.BlackjackClient;
 import java.awt.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.URL;
-import backend.Hand; 
-import backend.Card; 
+import backend.PlayerSnapshot;
+import backend.RosterPlayer; 
 
 public class OnlineGameConnector {
     private JFrame frame;
     private BlackjackClient client;
+    private OnlineGameState gameState;
 
     // --- Core Containers ---
     private JPanel mainPanel;
@@ -22,14 +24,13 @@ public class OnlineGameConnector {
     private JButton standButton;
     private JButton settingButton; 
     private JButton returnButton;
-    
-    // Global reference to clear the popup automatically when host restarts
+    private Timer summaryTimer; 
     private JFrame resultWindow; 
 
-    private String currentTurnPlayerName = "Waiting..."; 
-
+    
     public OnlineGameConnector(BlackjackClient client) {
         this.client = client;
+        gameState = new OnlineGameState(); 
         
         try {
             if (AvatarManager.getAllAvatars().isEmpty()) {
@@ -90,9 +91,8 @@ public class OnlineGameConnector {
         styleActionButton(settingButton, new Color(100, 100, 100));
         styleActionButton(returnButton, new Color(100, 100, 100));        
 
-        hitButton.setEnabled(false);
-        standButton.setEnabled(false);
-
+        setPlayerControls(false); 
+        
         hitButton.addActionListener(e -> {
             SoundManager.hitButton();
             client.sendMove("hit");
@@ -148,50 +148,7 @@ public class OnlineGameConnector {
         }
     }
 
-    private int getScoreUsingHand(String[] cards) {
-        Hand hand = new Hand();
-
-        for (String cardCode : cards) {
-            cardCode = cardCode.trim().toLowerCase();
-            if (cardCode.isEmpty() || cardCode.contains("hidden")) {
-                continue;
-            }
-
-            if (cardCode.length() < 2) continue;
-
-            String rankPart = cardCode.substring(0, cardCode.length() - 1);
-            char suitPart = cardCode.charAt(cardCode.length() - 1);
-
-            int rank;
-            switch (rankPart) {
-                case "a":  rank = 1;  break;
-                case "j":  rank = 11; break;
-                case "q":  rank = 12; break;
-                case "k":  rank = 13; break;
-                default:
-                    try {
-                        rank = Integer.parseInt(rankPart);
-                    } catch (NumberFormatException e) {
-                        rank = 1;
-                    }
-                    break;
-            }
-
-            int suit;
-            switch (suitPart) {
-                case 'd': suit = 0; break;
-                case 'h': suit = 1; break;
-                case 'c': suit = 2; break;
-                case 's': suit = 3; break;
-                default:  suit = -1; break;
-            }
-
-            hand.addCard(new Card(rank, suit));
-        }
-
-        return hand.getScore();
-    }
-
+    
     private void startServerListener() {
         new Thread(() -> {
             try {
@@ -204,182 +161,72 @@ public class OnlineGameConnector {
             } catch (IOException e) {
                 SwingUtilities.invokeLater(() -> {
                     statusLabel.setText("Connection lost.");
-                    hitButton.setEnabled(false);
-                    standButton.setEnabled(false);
+                    setPlayerControls(false); 
                 });
             }
         }).start();
     }
+    
+    
+    private void refreshTable() {
 
-    private JPanel createPlayerRowPanel(String name, String[] cards) {
-        JPanel row = new JPanel(new BorderLayout()); 
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 115));
-        row.setBackground(Config.tableColor != null ? Config.tableColor : new Color(20, 50, 30)); 
-        row.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(255, 255, 255, 30), 1),
-                BorderFactory.createEmptyBorder(10, 15, 10, 15)
-        ));
-        
-        JPanel identityLabelPanel = new JPanel(new GridLayout(1, 1)); 
-        identityLabelPanel.setOpaque(false); 
-        identityLabelPanel.setPreferredSize(new Dimension(150, 0)); 
-        
-        String displayName = name.trim();
-        String cleanParam = displayName.toLowerCase();
-        String cleanLocal = client.getPlayerName().trim().toLowerCase();
+        tablePanel.removeAll();
 
-        if (cleanParam.equals(cleanLocal) || (cleanParam.equals("1") && cleanLocal.equals("anonymous"))) {
-            if (!displayName.contains("(You)")) {
-                displayName = displayName + " (You)";
-            }
+        for (PlayerSnapshot player : gameState.getPlayerSnapshots()) {
+
+            tablePanel.add(
+                    PlayerRowRenderer.createPlayerRow(
+                            player,
+                            client)
+            );
+
+            tablePanel.add(
+                    Box.createRigidArea(
+                            new Dimension(0,10))
+            );
         }
 
-        int score = getScoreUsingHand(cards);
-        JLabel nameTxT = new JLabel(displayName + " (" + score + ")");
-        nameTxT.setFont(new Font("Times New Roman", Font.BOLD, 15)); 
-        nameTxT.setForeground(Color.WHITE);
-        identityLabelPanel.add(nameTxT);
-        row.add(identityLabelPanel, BorderLayout.WEST); 
-        
-        JPanel handPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
-        handPanel.setOpaque(false);
-        
-        for (String card : cards) {
-            if (!card.trim().isEmpty()) {
-                displayCard(handPanel, card.trim());
-            }
-        }
-        row.add(handPanel, BorderLayout.CENTER); 
-        return row; 
+        tablePanel.revalidate();
+        tablePanel.repaint();
     }
+    
+  
 
-    private URL getCardImageURL(String cardCode) {
-        cardCode = cardCode.trim().toLowerCase().replace("[", "").replace("]", "");
-        if (cardCode.contains("hidden") || cardCode.isEmpty()) {
-            return getClass().getResource("/image/card_back.png");
-        }
+ 
+    
+ 
 
-        if (cardCode.length() < 2) return null;
+    private void updateVisualRoster() {
 
-        String valuePart = cardCode.substring(0, cardCode.length() - 1);
-        char suitPart = cardCode.charAt(cardCode.length() - 1);
-
-        String valueName;
-        switch (valuePart) {
-            case "a":  valueName = "ace"; break;
-            case "j":  valueName = "jack"; break;
-            case "q":  valueName = "queen"; break;
-            case "k":  valueName = "king"; break;
-            default:   valueName = valuePart; break;
-        }
-
-        String suitName;
-        switch (suitPart) {
-            case 'd': suitName = "diamonds"; break;
-            case 'h': suitName = "hearts"; break;
-            case 'c': suitName = "clubs"; break;
-            case 's': suitName = "spades"; break;
-            default:  suitName = "unknown"; break;
-        }
-        return getClass().getResource("/image/" + valueName + "_of_" + suitName + ".png"); 
-    }
-
-    private void displayCard(JPanel panel, String cardCode) {
-        URL imgURL = getCardImageURL(cardCode);
-        if (imgURL != null) {
-            ImageIcon icon = new ImageIcon(imgURL);
-            JPanel cardShell = new JPanel(new BorderLayout());
-            cardShell.setPreferredSize(new Dimension(65, 90));
-            cardShell.setBackground(Color.WHITE);
-            cardShell.setBorder(BorderFactory.createLineBorder(new Color(40, 40, 40), 1, true));
-            
-            Image scaled = icon.getImage().getScaledInstance(55, 80, Image.SCALE_SMOOTH);
-            JLabel cardLabel = new JLabel(new ImageIcon(scaled));
-            
-            cardShell.add(cardLabel, BorderLayout.CENTER);
-            panel.add(cardShell);
-        } else {
-            JLabel errorLabel = new JLabel("[" + cardCode + "]");
-            errorLabel.setForeground(Color.YELLOW);
-            panel.add(errorLabel);
-        }
-    }
-
-    private void updateVisualRoster(String rawRosterData) {
         rosterPanel.removeAll();
 
-        JPanel dealerBlock = new JPanel(new BorderLayout());
-        dealerBlock.setOpaque(false);
-        JLabel dealerAvatar = new JLabel();
-        
-        if (AvatarManager.getAllAvatars() != null && !AvatarManager.getAllAvatars().isEmpty()) {
-            dealerAvatar.setIcon(AvatarManager.getAllAvatars().get(0)); 
+        rosterPanel.add(
+                RosterRenderer.createDealerBlock(
+                        gameState.getCurrentTurnPlayer())
+        );
+
+        for (RosterPlayer player : gameState.getRosterPlayers()) {
+
+            rosterPanel.add(
+                    RosterRenderer.createPlayerBlock(
+                            player,
+                            gameState.getCurrentTurnPlayer(),
+                            client)
+            );
         }
-        dealerAvatar.setHorizontalAlignment(JLabel.CENTER);
-        JLabel dealerNameLabel = new JLabel("Dealer", JLabel.CENTER);
-        dealerNameLabel.setFont(new Font("Times New Roman", Font.BOLD, 12));
-        dealerBlock.add(dealerAvatar, BorderLayout.CENTER);
-        dealerBlock.add(dealerNameLabel, BorderLayout.SOUTH);
-        
-        if (currentTurnPlayerName.equalsIgnoreCase("Dealer")) {
-            dealerNameLabel.setForeground(Color.YELLOW);
-            dealerBlock.setBorder(BorderFactory.createLineBorder(new Color(255, 215, 0), 2, true));
-        } else {
-            dealerNameLabel.setForeground(Color.RED);
-            dealerBlock.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
-        }
-        rosterPanel.add(dealerBlock);
 
-        if (rawRosterData != null && !rawRosterData.isEmpty()) {
-            String[] participants = rawRosterData.split(";");
-            for (String part : participants) {
-                if (part.trim().isEmpty()) continue;
-                String[] tokens = part.split(",");
-                if (tokens.length < 2) continue;
-                
-                String name = tokens[0].trim();
-                int avatarId = 0;
-                try { avatarId = Integer.parseInt(tokens[1].trim()); } catch(NumberFormatException ex){}
-
-                JPanel pBlock = new JPanel(new BorderLayout());
-                pBlock.setOpaque(false);
-                
-                JLabel pAvatar = new JLabel();
-                if (AvatarManager.getAllAvatars() != null && !AvatarManager.getAllAvatars().isEmpty()) {
-                    int safeId = (avatarId >= 0 && avatarId < AvatarManager.getAllAvatars().size()) ? avatarId : 0;
-                    pAvatar.setIcon(AvatarManager.getAllAvatars().get(safeId));
-                }
-                pAvatar.setHorizontalAlignment(JLabel.CENTER);
-                
-                JLabel pNameLabel = new JLabel(name, JLabel.CENTER);
-                pNameLabel.setFont(new Font("Times New Roman", Font.PLAIN, 12));
-                
-                String cleanName = name.toLowerCase();
-                String cleanLocalName = client.getPlayerName().trim().toLowerCase();
-
-                if (cleanName.equals(cleanLocalName) || (cleanName.equals("1") && cleanLocalName.equals("anonymous"))) {
-                    pNameLabel.setText(name + " (You)");
-                    pNameLabel.setForeground(Color.GREEN);
-                } else {
-                    pNameLabel.setForeground(Color.WHITE);
-                }
-
-                if (name.equalsIgnoreCase(currentTurnPlayerName)) {
-                    pBlock.setBorder(BorderFactory.createLineBorder(new Color(255, 215, 0), 2, true));
-                } else {
-                    pBlock.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
-                }
-
-                pBlock.add(pAvatar, BorderLayout.CENTER);
-                pBlock.add(pNameLabel, BorderLayout.SOUTH);
-                rosterPanel.add(pBlock);
-            }
-        }
         rosterPanel.revalidate();
         rosterPanel.repaint();
+  
+
     }
     public void setResultWindow(JFrame window) {
     	this.resultWindow = window; 
+    }
+    
+    private void setPlayerControls(boolean enabled) {
+    	hitButton.setEnabled(enabled);
+    	standButton.setEnabled(enabled);
     }
 
     private void executeQuitSequence() {
@@ -390,55 +237,119 @@ public class OnlineGameConnector {
         }
         new BlackjackStartWindow();
     }
+    
+    private void handleRosterUpdate(String message) {
+
+        String data =
+                message.substring(
+                        message.indexOf("ROSTER_UPDATE:") + 14)
+                        .trim();
+
+        gameState.updateRoster(data);
+
+        refreshRoster();
+    }
+    
+    private void refreshRoster() {
+        updateVisualRoster();
+    }
+    
+    private void handleCurrentTurn(String message) {
+    	 int index = message.indexOf("CURRENT_TURN:");
+         gameState.setCurrentTurnPlayer(message.substring(index + 13).trim());  
+         
+        refreshRoster(); 
+    }
+    
+    private void handleTableSnapshot(String message) {
+    	System.out.println("Snapshot recieved"); 
+    	String snapshotData = message.substring(message.indexOf("TABLE_SNAPSHOT:") + 15).trim();
+    	gameState.updateSnapshot(snapshotData);
+    	refreshTable();
+    }
+    
+    private void clearTable() {
+
+        tablePanel.removeAll();
+        tablePanel.revalidate();
+        tablePanel.repaint();
+    }
+    
+    
+    private void handleNewRound() {
+    	System.out.println("New Round recieved"); 
+
+    	if (summaryTimer != null)  {
+    		summaryTimer.stop(); 
+    		summaryTimer = null; 
+    	}
+    	
+        statusLabel.setText("New Round Started! Good Luck!");
+        
+        if (resultWindow != null) {
+            resultWindow.dispose();
+            resultWindow = null;
+        }
+       clearTable(); 
+    }
+
+    private void handleGameOver() {
+
+        statusLabel.setText("GAME OVER...");
+
+        hitButton.setEnabled(false);
+        standButton.setEnabled(false);
+
+        String cachedSnapshot =
+                gameState.getLatestSnapshotRaw();
+
+        if (cachedSnapshot == null) {
+            cachedSnapshot =
+                    "Dealer=10s,8c;YourName=Kc,Ah";
+        }
+
+        String finalSnapshot = cachedSnapshot;
+
+        if (summaryTimer != null) {
+            summaryTimer.stop();
+        }
+
+        summaryTimer = new Timer(3000, e -> {
+            FinalBoardPrint.showOnlineSummary(
+                    frame,
+                    finalSnapshot,
+                    client,
+                    this);
+        });
+
+        summaryTimer.setRepeats(false);
+        summaryTimer.start();
+    }
+    
+    
+    
+    
 
     private void processServerMessage(String message) {
         System.out.println("[Server Data]: " + message);
 
-        // --- AUTOMATIC RESTART TRIGGER ---
-        // Clears old configurations when the host initiates a new match session
+       
         if (message.contains("GAME_STARTED") || message.contains("ROUND_START") || message.contains("NEW_ROUND")) {
-            statusLabel.setText("New Round Started! Good Luck!");
-            
-            // Automatically close the popup window across all players
-            if (resultWindow != null) {
-                resultWindow.dispose();
-                resultWindow = null;
-            }
-            tablePanel.removeAll();
-            tablePanel.revalidate();
-            tablePanel.repaint();
+        	handleNewRound();
         }
-
+        	
         if (message.contains("TABLE_SNAPSHOT:")) {
-            String snapshotData = message.substring(message.indexOf("TABLE_SNAPSHOT:") + 15).trim();
-            tablePanel.putClientProperty("latest_snapshot_raw", snapshotData);
-
-            tablePanel.removeAll();
-            String[] rows = snapshotData.split(";");
-            for (String row : rows) {
-                if (row.trim().isEmpty()) continue;
-                String[] tokens = row.split("=");
-                if (tokens.length < 2) continue;
-                String name = tokens[0].trim();
-                String[] cards = tokens[1].split(",");
-                tablePanel.add(createPlayerRowPanel(name, cards));
-                tablePanel.add(Box.createRigidArea(new Dimension(0, 10)));
-            }
-            tablePanel.revalidate();
-            tablePanel.repaint();
+           handleTableSnapshot(message); 
         }
         
 
         if (message.contains("ROSTER_UPDATE:")) {
-            String data = message.substring(message.indexOf("ROSTER_UPDATE:") + 14).trim();
-            rosterPanel.putClientProperty("raw_cache", data);
-            updateVisualRoster(data);
+            handleRosterUpdate(message); 
         }
         
         if (message.contains("WAIT_FOR_HOST")) {
             statusLabel.setText("Waiting for host to restart the game...");
-            hitButton.setEnabled(false);
-            standButton.setEnabled(false);
+            setPlayerControls(false); 
         }
         if (message.contains("YOU_ARE_HOST")) {
             statusLabel.setText("You are the host.");
@@ -446,39 +357,20 @@ public class OnlineGameConnector {
 
         if (message.contains("UNLOCK_ACTIONS_FOR_CLIENT")) {
             statusLabel.setText("★ Your Turn! Make your move. ★");
-            hitButton.setEnabled(true);
-            standButton.setEnabled(true);
+            setPlayerControls(true); 
         } 
         else if (message.contains("LOCK_ACTIONS_FOR_CLIENT")) {
             statusLabel.setText("Waiting for other players...");
-            hitButton.setEnabled(false);
-            standButton.setEnabled(false);
+            setPlayerControls(false); 
         }
         
         if (message.contains("CURRENT_TURN:")) {
-            int index = message.indexOf("CURRENT_TURN:");
-            this.currentTurnPlayerName = message.substring(index + 13).trim();
-            
-            String cachedData = (String) rosterPanel.getClientProperty("raw_cache");
-            if (cachedData != null) {
-                updateVisualRoster(cachedData);
-            }
+            handleCurrentTurn(message); 
         }
-     // --- AUTOMATIC RESTART TRIGGER ---
-        if (message.contains("GAME_STARTED") || message.contains("ROUND_START") || message.contains("NEW_ROUND")) {
-            statusLabel.setText("New Round Started! Good Luck!");
-            
+        if (message.contains("GAME_OVER_SUMMARY:")
+                || message.contains("SHOW_FINAL_SUMMARY:")) {
+        	handleGameOver(); 
         }
-        
-        if (message.contains("GAME_OVER_SUMMARY:") || message.contains("SHOW_FINAL_SUMMARY:")) {
-            hitButton.setEnabled(false);
-            standButton.setEnabled(false);
             
-            String cachedSnapshot = (String) tablePanel.getClientProperty("latest_snapshot_raw");
-            if (cachedSnapshot == null) {
-                cachedSnapshot = "Dealer=10s,8c;YourName=Kc,Ah";
-            }
-            FinalBoardPrint.showOnlineSummary(frame, cachedSnapshot, client, this);
-        }
     }
 }
