@@ -3,12 +3,6 @@ package gui;
 import javax.swing.*;
 import java.awt.*; 
 import java.awt.event.*; 
-import javax.sound.sampled.AudioInputStream; 
-import javax.sound.sampled.AudioSystem; 
-import javax.sound.sampled.Clip;
-import javax.sound.sampled.FloatControl;
-
-import java.net.URL; 
 
 public class BlackjackStartWindow {    
     public BlackjackStartWindow() {

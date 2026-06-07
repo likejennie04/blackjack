@@ -19,24 +19,20 @@ public class Computer extends Hand implements Runnable {
     @Override
     public void run() {
         while (getScore() < 21) {
-            // STRATEGY: Stop hitting immediately if 5-Card Charlie is achieved
             if (this.handCards.size() >= 5) {
                 System.out.println("AI Player " + id + " achieved 5-Card Charlie and stands.");
                 break;
             }
 
             int currentScore = getScore();
-            // AI Logic: Always hit if score < 14, or 50% chance to hit if score is between 14 and 17
             boolean shouldHit = (currentScore < 14) || (currentScore <= 17 && r.nextInt(2) == 1);
             
             if (shouldHit) {
                 addCard(d.dealCard());
-                // Check if AI busted after hitting
                 if (getScore() > 21) {
                     break;
                 }
             } else {
-                // AI chooses to stand
                 break;
             }
         }
